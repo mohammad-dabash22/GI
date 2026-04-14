@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+uploads/
+.env
+audit_log.jsonl
+~$*
+*.db
+server.log

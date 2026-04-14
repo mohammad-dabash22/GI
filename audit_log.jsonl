@@ -1,0 +1,136 @@
+{"timestamp": "2026-04-01T08:17:31+00:00", "action": "upload_documents", "user": "Laith.Mufti@ae.ey.com", "details": {"project_id": 2, "files": ["81e4a3d49cae4e0c835e15640bcf1886_bank_statement_apex_holdings.txt", "ad7b4acacb614fdc8aa49879e0ee56d6_corporate_registry_filings.txt", "545b7ced17054fc1a30be82579b05274_interview_transcript_informant.txt", "2a2c4fca16984723a74b270eb3e5f052_investigation_report.txt", "0ba088acb14a46d0994858e007b60eec_suspicious_activity_report.pdf"], "entities_extracted": 43, "relationships_extracted": 74, "mode": "new"}}
+{"timestamp": "2026-04-01T14:16:03+00:00", "action": "upload_documents", "user": "Laith.Mufti@ae.ey.com", "details": {"project_id": 3, "files": ["fc0509f2ce9e42469dba8563fe185084_bank_statement_apex_holdings.txt", "e658b95ef213480d92fda805b99f8bf1_corporate_registry_filings.txt", "62a1db20edf045ce8761db5c7dcef6ea_interview_transcript_informant.txt", "8e7cefd9837f482e86c3f1779d9dcc5b_investigation_report.txt", "54104e1def79443d83d68aa6f9efde5c_suspicious_activity_report.pdf"], "entities_extracted": 42, "relationships_extracted": 42, "mode": "new"}}
+{"timestamp": "2026-04-01T14:19:09+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Why has the Geneva entity been created?"}}
+{"timestamp": "2026-04-01T14:20:48+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "4486_c0_acc2", "to": "4486_c0_p1", "found": true}}
+{"timestamp": "2026-04-01T14:22:24+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Why is Maria Santos not connected to the node: \"City of London\""}}
+{"timestamp": "2026-04-01T14:22:55+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "But the evidence of the \"City of London\" is \"\u201cAccountant Maria Santos, based in the City of London\u201d"}}
+{"timestamp": "2026-04-01T14:34:44+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "What can you tell me about Viktor Petrov?"}}
+{"timestamp": "2026-04-01T15:03:12+00:00", "action": "upload_documents", "user": "Laith.Mufti@ae.ey.com", "details": {"project_id": 2, "files": ["1673a84fee99434fa62277d3bb5dd01d_bank_statement_apex_holdings.txt", "6c30caeae63b4d49a78a0412e06d9aa0_corporate_registry_filings.txt", "f039c3d9b7654b33a5c5756a73701284_interview_transcript_informant.txt", "8037053ecf2b44d9b430da6b396c6282_investigation_report.txt", "3cbcc2fb6ee64282b17fa3ddbefaf7f8_suspicious_activity_report.pdf"], "entities_extracted": 30, "relationships_extracted": 66, "mode": "new"}}
+{"timestamp": "2026-04-01T15:16:53+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_acc2", "to": "8b7f_c0_acc_apex_holdings_ltd_meridian_international_bank_8839_2201_4477", "found": true}}
+{"timestamp": "2026-04-01T15:39:54+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Any possible money laundring activitiy within this graph?"}}
+{"timestamp": "2026-04-01T16:17:15+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_21"}}
+{"timestamp": "2026-04-01T16:18:01+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_41"}}
+{"timestamp": "2026-04-01T16:19:58+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_46"}}
+{"timestamp": "2026-04-01T16:20:00+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:01+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:01+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:02+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:02+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:03+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:03+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:04+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:04+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:05+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:05+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:06+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:06+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:07+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:07+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:20:08+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T16:22:19+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T16:22:19+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T16:28:39+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "highlight all flows above 1m USD"}}
+{"timestamp": "2026-04-01T17:58:06+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Test"}}
+{"timestamp": "2026-04-01T17:58:33+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "show all nodes related to Viktor Petrov"}}
+{"timestamp": "2026-04-01T18:00:56+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:00:59+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:01:03+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:01:09+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:01:11+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T18:02:22+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:02:25+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:04:47+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T18:04:48+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T18:04:48+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T18:04:49+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T18:04:49+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-01T18:05:05+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-01T18:05:50+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_38"}}
+{"timestamp": "2026-04-01T18:05:54+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_38"}}
+{"timestamp": "2026-04-02T05:24:07+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:26:33+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:26:58+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_37"}}
+{"timestamp": "2026-04-02T05:27:01+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T05:27:05+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_37"}}
+{"timestamp": "2026-04-02T05:27:09+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_37"}}
+{"timestamp": "2026-04-02T05:27:11+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T05:27:13+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T05:27:14+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T05:27:15+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T05:27:19+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:27:20+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:27:21+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:45:22+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:23+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:25+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:26+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:28+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:29+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:32+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:33+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:34+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:37+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_20"}}
+{"timestamp": "2026-04-02T05:45:40+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:50:35+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_37"}}
+{"timestamp": "2026-04-02T05:51:03+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:51:48+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_37"}}
+{"timestamp": "2026-04-02T05:51:51+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_39"}}
+{"timestamp": "2026-04-02T05:52:07+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:52:09+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T05:52:33+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_39"}}
+{"timestamp": "2026-04-02T05:52:34+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_39"}}
+{"timestamp": "2026-04-02T05:52:36+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_39"}}
+{"timestamp": "2026-04-02T05:52:37+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_40"}}
+{"timestamp": "2026-04-02T05:52:39+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_58"}}
+{"timestamp": "2026-04-02T06:38:20+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_39"}}
+{"timestamp": "2026-04-02T06:38:23+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_40"}}
+{"timestamp": "2026-04-02T06:38:24+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_58"}}
+{"timestamp": "2026-04-02T06:38:26+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_59"}}
+{"timestamp": "2026-04-02T06:38:27+00:00", "action": "review_accept", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_60"}}
+{"timestamp": "2026-04-02T06:38:34+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_61"}}
+{"timestamp": "2026-04-02T06:38:40+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-02T06:38:44+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T06:38:47+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T06:38:53+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_61"}}
+{"timestamp": "2026-04-02T06:38:54+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-02T06:47:57+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Can you highlight nodes on the graph itself?"}}
+{"timestamp": "2026-04-02T10:01:56+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Who's laundering money"}}
+{"timestamp": "2026-04-02T13:03:19+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "What is laundering money"}}
+{"timestamp": "2026-04-03T07:49:09+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-03T08:22:04+00:00", "action": "edit_entity", "user": "Laith.Mufti@ae.ey.com", "details": {"entity_id": "8b7f_c0_acc_apex_holdings_ltd_meridian_international_bank_8839_2201_4477", "fields_changed": ["name", "type", "evidence", "properties"]}}
+{"timestamp": "2026-04-03T11:40:34+00:00", "action": "delete_connection", "user": "Laith.Mufti@ae.ey.com", "details": {"edge_id": "edge_19", "label": "Owns 100% of Pinnacle Trading LLC"}}
+{"timestamp": "2026-04-06T09:59:41+00:00", "action": "create_connection", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_org_apex_holdings_ltd_jersey", "to": "5a72_c0_loc1", "type": "related_to", "label": "related_to"}}
+{"timestamp": "2026-04-06T10:02:12+00:00", "action": "create_connection", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "p5", "to": "p1", "type": "related_to", "label": "Located in Bucharest"}}
+{"timestamp": "2026-04-08T06:35:45+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_64"}}
+{"timestamp": "2026-04-08T06:35:53+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-08T06:38:38+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_p1", "to": "8b7f_c0_org_meridian_international_bank", "found": true}}
+{"timestamp": "2026-04-08T06:38:43+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_p1", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T06:38:44+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_p1", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T06:38:48+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_p1", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T06:38:49+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_p1", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T06:39:03+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_p1", "to": "8b7f_c0_acc_apex_holdings_ltd_meridian_international_bank_8839_2201_4477", "found": true}}
+{"timestamp": "2026-04-08T06:39:33+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_p_marina_sokolova", "to": "8b7f_c0_org_novacrest_capital", "found": true}}
+{"timestamp": "2026-04-08T06:39:38+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_p_marina_sokolova", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T06:39:40+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_p_marina_sokolova", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T10:24:43+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_64"}}
+{"timestamp": "2026-04-08T10:25:16+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_63"}}
+{"timestamp": "2026-04-08T10:37:39+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_60"}}
+{"timestamp": "2026-04-08T10:41:31+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-08T10:41:34+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-08T10:41:36+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-08T10:41:42+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_62"}}
+{"timestamp": "2026-04-08T10:41:47+00:00", "action": "review_restore", "user": "Laith.Mufti@ae.ey.com", "details": {"index": 0}}
+{"timestamp": "2026-04-08T13:38:56+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_org_meridian_international_bank", "to": "5a72_c0_org2", "found": true}}
+{"timestamp": "2026-04-08T13:39:04+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_org_meridian_international_bank", "to": "5a72_c0_p5", "found": true}}
+{"timestamp": "2026-04-08T13:39:16+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_org_meridian_international_bank", "to": "5a72_c0_loc3", "found": true}}
+{"timestamp": "2026-04-08T13:39:35+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_org_meridian_international_bank", "to": "8b7f_c0_p_marina_sokolova", "found": true}}
+{"timestamp": "2026-04-08T15:04:26+00:00", "action": "delete_connection", "user": "Laith.Mufti@ae.ey.com", "details": {"edge_id": "edge_14", "label": "Wire 85K GBP\n2024-03-04"}}
+{"timestamp": "2026-04-08T15:04:37+00:00", "action": "delete_node", "user": "Laith.Mufti@ae.ey.com", "details": {"node_id": "5a72_c0_p5", "name": "Ahmed Al-Rashid"}}
+{"timestamp": "2026-04-08T15:04:43+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-08T15:04:44+00:00", "action": "undo", "user": "Laith.Mufti@ae.ey.com", "details": {}}
+{"timestamp": "2026-04-08T15:05:16+00:00", "action": "delete_node", "user": "Laith.Mufti@ae.ey.com", "details": {"node_id": "5a72_c0_org4", "name": "Lakeview Properties SA"}}
+{"timestamp": "2026-04-08T15:06:08+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "5a72_c0_acc4", "to": "8b7f_c0_acc_apex_holdings_ltd_meridian_international_bank_8839_2201_4477", "found": true}}
+{"timestamp": "2026-04-13T08:21:23+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Hello"}}
+{"timestamp": "2026-04-13T08:21:44+00:00", "action": "ai_chat", "user": "Laith.Mufti@ae.ey.com", "details": {"question": "Show me where is fraud taking place"}}
+{"timestamp": "2026-04-13T08:23:39+00:00", "action": "review_reject", "user": "Laith.Mufti@ae.ey.com", "details": {"item_id": "edge_63"}}
+{"timestamp": "2026-04-13T08:24:41+00:00", "action": "find_path", "user": "Laith.Mufti@ae.ey.com", "details": {"from": "8b7f_c0_acc_apex_holdings_ltd_meridian_international_bank_8839_2201_4477", "to": "5a72_c0_acc2", "found": true}}
