@@ -1,5 +1,5 @@
 """ELK layout branch launcher -- imports main app, runs on port 8053."""
-from app import app
+from main import app
 import uvicorn
 
 if __name__ == "__main__":

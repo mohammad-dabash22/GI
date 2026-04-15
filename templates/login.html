@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Graph Intelligence — Login</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #0d0d0d; color: #d4d4d4; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .card { background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; padding: 40px; width: 380px; }
+        .card h1 { font-size: 18px; font-weight: 600; color: #e8e8e8; margin-bottom: 4px; }
+        .card p.sub { font-size: 11px; color: #555; margin-bottom: 28px; }
+        .tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid #2a2a2a; }
+        .tab { flex: 1; text-align: center; padding: 10px 0; font-size: 12px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit; background: none; border-top: none; border-left: none; border-right: none; }
+        .tab.active { color: #ddd; border-bottom-color: #ddd; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 6px; font-weight: 600; }
+        .field input { width: 100%; padding: 10px 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; color: #bbb; font-size: 12px; font-family: inherit; }
+        .field input:focus { outline: none; border-color: #555; }
+        .btn { width: 100%; padding: 11px; border: 1px solid #3a3a3a; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; background: #1a1a1a; color: #ddd; margin-top: 8px; }
+        .btn:hover { border-color: #555; background: #1f1f1f; }
+        .btn:disabled { color: #333; cursor: not-allowed; }
+        .error { background: #1a1212; border: 1px solid #3a2020; color: #c88; font-size: 11px; padding: 8px 12px; border-radius: 4px; margin-bottom: 16px; display: none; }
+        .success { background: #121a12; border: 1px solid #203a20; color: #8c8; font-size: 11px; padding: 8px 12px; border-radius: 4px; margin-bottom: 16px; display: none; }
+        .theme-btn { position: fixed; top: 16px; right: 16px; padding: 5px 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; color: #888; font-size: 10px; cursor: pointer; font-family: inherit; }
+        .theme-btn:hover { color: #ddd; border-color: #555; }
+        body.light { background: #f0f0f0; color: #222; }
+        body.light .card { background: #fff; border-color: #ddd; }
+        body.light .card h1 { color: #222; }
+        body.light .card p.sub { color: #888; }
+        body.light .tab { color: #999; }
+        body.light .tab.active { color: #222; border-bottom-color: #222; }
+        body.light .tabs { border-bottom-color: #ddd; }
+        body.light .field label { color: #888; }
+        body.light .field input { background: #f5f5f5; border-color: #ddd; color: #333; }
+        body.light .field input:focus { border-color: #999; }
+        body.light .btn { background: #f5f5f5; border-color: #ccc; color: #222; }
+        body.light .btn:hover { background: #eee; border-color: #999; }
+        body.light .error { background: #fef0f0; border-color: #e99; color: #c44; }
+        body.light .success { background: #f0fef0; border-color: #9e9; color: #3a3; }
+        body.light .theme-btn { background: #f5f5f5; border-color: #ddd; color: #888; }
+    </style>
+</head>
+<body>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">Light</button>
+    <div class="card">
+        <h1>Forensic Graph Intelligence</h1>
+        <p class="sub">Sign in or create an account to continue</p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('login')">Sign In</button>
+            <button class="tab" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <div id="errorMsg" class="error"></div>
+        <div id="successMsg" class="success"></div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="loginUser" required autocomplete="username">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" id="loginPass" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn" id="loginBtn">Sign In</button>
+        </form>
+
+        <form id="registerForm" style="display:none" onsubmit="handleRegister(event)">
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="regUser" required autocomplete="username">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" id="regPass" required minlength="4" autocomplete="new-password">
+            </div>
+            <div class="field">
+                <label>Confirm Password</label>
+                <input type="password" id="regPassConfirm" required minlength="4" autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn" id="regBtn">Create Account</button>
+        </form>
+    </div>
+
+    <script>
+    if (localStorage.getItem('fgi_token')) {
+        window.location.href = '/projects';
+    }
+
+    function toggleTheme() {
+        const cur = localStorage.getItem('fgi_theme') || 'dark';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('fgi_theme', next);
+        applyTheme(next);
+    }
+    function applyTheme(t) {
+        document.body.classList.toggle('light', t === 'light');
+        document.getElementById('themeBtn').textContent = t === 'light' ? 'Dark' : 'Light';
+    }
+    applyTheme(localStorage.getItem('fgi_theme') || 'dark');
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (tab === 'login' ? i === 0 : i === 1)));
+        document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
+        document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+        document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'none';
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        el.textContent = msg; el.style.display = 'block';
+        document.getElementById('successMsg').style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+        const el = document.getElementById('successMsg');
+        el.textContent = msg; el.style.display = 'block';
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        btn.disabled = true; btn.textContent = 'Signing in...';
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('loginUser').value,
+                    password: document.getElementById('loginPass').value,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) { showError(data.detail || 'Login failed'); return; }
+            localStorage.setItem('fgi_token', data.token);
+            localStorage.setItem('fgi_username', data.username);
+            window.location.href = '/projects';
+        } catch (err) { showError('Network error'); }
+        finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        const pass = document.getElementById('regPass').value;
+        const confirm = document.getElementById('regPassConfirm').value;
+        if (pass !== confirm) { showError('Passwords do not match'); return; }
+        const btn = document.getElementById('regBtn');
+        btn.disabled = true; btn.textContent = 'Creating...';
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('regUser').value,
+                    password: pass,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) { showError(data.detail || 'Registration failed'); return; }
+            showSuccess('Account created. You can now sign in.');
+            switchTab('login');
+            document.getElementById('loginUser').value = document.getElementById('regUser').value;
+        } catch (err) { showError('Network error'); }
+        finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+    }
+    </script>
+</body>
+</html>

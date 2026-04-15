@@ -1,6 +1,12 @@
 import os
 import secrets
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".md"}
 
@@ -8,32 +14,20 @@ SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./forensic_graph.db")
 JWT_EXPIRY_HOURS = int(os.environ.get("JWT_EXPIRY_HOURS", "24"))
 
-# Azure OpenAI
-AZURE_OPENAI_ENDPOINT = os.environ.get(
-    "AZURE_OPENAI_ENDPOINT",
-    "https://ue2doai5kuaoa01.cognitiveservices.azure.com/",
-)
-AZURE_OPENAI_KEY = os.environ.get(
-    "AZURE_OPENAI_KEY",
-    "18c8b76fa6cf4972ab90203435b2ebfa",
-)
-AZURE_OPENAI_API_VERSION = os.environ.get(
-    "AZURE_OPENAI_API_VERSION",
-    "2024-12-01-preview",
-)
-AZURE_OPENAI_DEPLOYMENT = os.environ.get(
-    "AZURE_OPENAI_DEPLOYMENT",
-    "gpt-5.4-nano",
-)
+# Azure OpenAI — all values must be supplied via environment variables or .env
+AZURE_OPENAI_ENDPOINT = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
+AZURE_OPENAI_KEY = os.environ.get("AZURE_OPENAI_KEY", "")
+AZURE_OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
+AZURE_OPENAI_DEPLOYMENT = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
 
-# Models
+# Models (all map to the same deployment by default; override per-env if needed)
 FAST_MODEL = AZURE_OPENAI_DEPLOYMENT
 STRONG_MODEL = AZURE_OPENAI_DEPLOYMENT
 FALLBACK_MODEL = AZURE_OPENAI_DEPLOYMENT
 
 ENTITY_TYPES = [
     "Person", "Organization", "Account", "Phone", "Address",
-    "Vehicle", "Email", "MoneyTransfer", "Document", "Event", "Location"
+    "Vehicle", "Email", "MoneyTransfer", "Document", "Event", "Location",
 ]
 
 RELATIONSHIP_TYPES = [
@@ -41,7 +35,7 @@ RELATIONSHIP_TYPES = [
     "located_at", "associated_with", "controls", "registered_to", "paid_by",
     "met_with", "traveled_to", "signed", "witnessed", "received_from",
     "shareholder_of", "board_member_of", "family", "referred_by", "financed",
-    "sold_shares_to", "trades_with", "managed_by", "ceo_of", "director_of"
+    "sold_shares_to", "trades_with", "managed_by", "ceo_of", "director_of",
 ]
 
 DOCUMENT_TYPES = [
@@ -53,7 +47,7 @@ DOCUMENT_TYPES = [
     "Legal Agreement",
     "Property Records",
     "Travel Records",
-    "Other"
+    "Other",
 ]
 
 MAX_CONCURRENT_CALLS = 5
