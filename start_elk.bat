@@ -14,5 +14,6 @@ timeout /t 2 /nobreak >nul
 
 REM Open browser after short delay then start server
 start "" cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:8053"
-python app_elk.py
+set PORT=8053
+python main.py
 pause

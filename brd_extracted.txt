@@ -1,0 +1,304 @@
+
+
+
+
+
+
+Forensic Graph Intelligence — PoC
+Business Requirement Document
+Version 0.1
+
+Table of Contents
+1. Purpose
+2. Business Context
+3. Business Objectives
+4. Scope
+   4.1 In Scope (Phase 1)
+   4.2 Out of Scope (Phase 1)
+5. Business Requirements
+   5.1 AI-Powered Document Ingestion & Extraction
+   5.2 3-Pass AI Extraction Pipeline
+   5.3 Entity Deduplication & Graph Construction
+   5.4 Interactive Graph Visualization
+   5.5 Graph Editing & Undo
+   5.6 Path Analysis
+   5.7 AI Chat & Natural Language Querying
+   5.8 Review Queue for Low-Confidence Items
+   5.9 Automated Reporting & Export
+   5.10 Audit Logging
+6. User Experience
+7. Success Metrics
+8. Assumptions
+9. Appendix
+
+Document Control
+Document Administration:
+
+Version History:
+
+Document Review and Approval:
+
+1. Purpose
+The purpose of this document is to define the business requirements for the Forensic Graph Intelligence Proof of Concept (Phase 1). This solution automates the extraction, linking, and visualization of entities and relationships from forensic investigation documents (PDF, DOCX, TXT) using LLM-powered AI.
+The tool aims to significantly reduce manual effort in building intelligence graphs for fraud, anti-money laundering (AML), financial crime, and asset tracing investigations. It transforms unstructured documents into a structured, interactive, and queryable knowledge graph with AI-scored confidence and full source traceability.
+2. Business Context
+Forensic investigators currently rely on manual processes to read investigation documents, identify entities (persons, organisations, bank accounts, transactions, addresses), and construct link analysis charts using tools such as Microsoft Excel, i2 Analyst’s Notebook, or Microsoft Visio. This approach is time-consuming, error-prone, and difficult to scale when cross-referencing large document sets spanning multiple jurisdictions.
+The Forensic Graph Intelligence PoC addresses these challenges by introducing an AI-powered pipeline that automatically extracts, resolves, and validates entities and their relationships from uploaded documents, and renders them as an interactive intelligence graph.
+
+Pain Points
+Manual entity extraction from investigation documents is slow and inconsistent across analysts.
+No automated cross-document entity resolution or deduplication capability exists today.
+Confidence and reliability of extracted intelligence is not scored or traceable to its source document.
+No centralised way to query or explore the entity graph interactively.
+Reporting outputs require manual assembly, increasing delivery time and inconsistency.
+Path analysis between entities (e.g., tracing money flows) is performed manually.
+
+Anticipated Impact
+Reduce document-to-graph generation time from days to minutes.
+Provide AI-scored confidence (1–10) with source traceability for every entity and relationship.
+Enable interactive 2D and 3D graph exploration with automated path analysis.
+Generate automated report-card style investigation summaries.
+Strengthen EY’s forensic offering through a modern, intelligence-driven product.
+Establish a foundation for future enhancements (persistent storage, RBAC, client deployment).
+
+Target Users
+EY Forensic & Integrity Services investigators, analysts, and engagement leads (internal use).
+Market for the Product
+Internal EY forensic engagements across fraud, AML, financial crime, and asset tracing investigations. Initially targeting MENA region engagements with potential for global expansion.
+3. Business Objectives
+Automate entity and relationship extraction from unstructured investigation documents using Large Language Models (LLMs).
+Provide a 3-pass AI pipeline (Extract → Cross-Reference → Validate) with confidence scoring and source attribution.
+Deliver interactive 2D and 3D graph visualisation of the intelligence network.
+Enable path analysis between entities (shortest path, all paths) for tracing connections.
+Support an analyst review workflow for low-confidence AI extractions (accept/reject).
+Generate automated report-card style investigation summaries exportable as HTML/PDF.
+Provide an AI chat interface for natural language querying of the graph.
+Demonstrate AI Hub impact through a visible, high-value forensic use case.
+4. Scope
+4.1 In Scope (Phase 1)
+Document upload and text extraction (PDF via PyMuPDF, DOCX via python-docx, TXT/MD).
+3-pass AI extraction pipeline supporting both OpenAI (GPT-4o) and Anthropic (Claude):
+   • Pass 1: Parallel chunk-level entity & relationship extraction with document-type-specific prompts.
+   • Pass 2: Cross-document entity resolution and relationship discovery.
+   • Pass 3: Confidence scoring (1–10) with reasoned explanations per item.
+Entity deduplication via fuzzy name matching (configurable threshold of 0.70).
+Support for 11 entity types: Person, Organisation, Account, Phone, Address, Vehicle, Email, MoneyTransfer, Document, Event, Location.
+Support for 24 relationship types (owns, works_for, transferred_money_to, controls, family, etc.).
+Interactive graph canvas: 2D rendering (vis.js) and 3D rendering (3d-force-graph).
+Manual graph editing: create/delete nodes, create/delete edges, connect mode, undo (up to 50 steps), reset.
+Left panel: node/edge detail view with confidence badge, evidence, properties, and source reference.
+Bottom panel with 4 tabs: AI Chat, Review Queue, Document Viewer, Audit Log.
+Path Finder: BFS shortest path and DFS all-paths between any two nodes.
+Timeline view, floating sticky notes, and visual grouping (lasso-select).
+HTML investigation report export (entity table, relationship table, confidence summary, audit log).
+PNG / SVG / PDF graph image export.
+Demo mode with pre-loaded Meridian Holdings scenario (24 entities, 31 relationships).
+FastAPI backend with single-page HTML/JavaScript frontend.
+9 document type classifications: Bank Statement, Corporate Filing, Investigation Report, Interview Transcript, Phone/Comms Records, Legal Agreement, Property Records, Travel Records, Other.
+4.2 Out of Scope (Phase 1)
+User authentication or role-based access control (RBAC).
+Persistent database storage (current architecture uses in-memory storage only).
+Real-time collaborative editing.
+Integration with external GRC or case management systems (e.g., Relativity, i2, ServiceNow, Archer).
+Automated evidence collection or document ingestion from external sources.
+AI-driven remediation suggestions or risk scoring beyond extraction confidence.
+Production-grade deployment (containerisation, cloud hosting, SSO).
+Automated regulatory update feeds.
+Multi-tenant architecture.
+OCR for scanned image-based documents.
+Non-English document processing.
+5. Business Requirements
+The following requirements define the functional capabilities delivered in Phase 1 of the Forensic Graph Intelligence PoC. Each requirement includes a description and acceptance criteria.
+5.1 AI-Powered Document Ingestion & Extraction
+Description:
+The system shall support uploading PDF, DOCX, and TXT/MD documents and automatically extracting text into structured chunks (by page for PDFs, by paragraph for DOCX, and by line range for plain text). Users can classify each uploaded file by document type to enable type-specific extraction prompts.
+Acceptance Criteria:
+Text is extracted and chunked from all supported file formats (.pdf, .docx, .doc, .txt, .md).
+Document type is selectable per file from a predefined list of 9 types.
+Unsupported file types are rejected with an informative error message.
+Uploaded files are accessible in the Document Viewer tab.
+5.2 3-Pass AI Extraction Pipeline
+Description:
+The system shall process uploaded documents through a 3-pass AI pipeline: Pass 1 (Quick Extract) performs parallel chunk-level entity and relationship extraction using document-type-specific prompts. Pass 2 (Cross-Reference) resolves entity duplicates across documents and discovers missing relationships. Pass 3 (Validate & Score) assigns confidence scores (1–10) with reasoned explanations to each extraction. Both OpenAI and Anthropic LLM providers are supported.
+Acceptance Criteria:
+Entities and relationships are extracted with confidence scores and source references.
+Pipeline progress is visible to the user (current pass and item count).
+Both OpenAI and Anthropic API keys are accepted; at least one is required.
+Up to 5 concurrent LLM calls are processed in parallel during Pass 1.
+Cross-document entity resolution produces merge mappings in Pass 2.
+Each extraction includes a confidence score (1–10) and a human-readable reason in Pass 3.
+5.3 Entity Deduplication & Graph Construction
+Description:
+The system shall deduplicate entities using fuzzy string matching (SequenceMatcher) with a configurable similarity threshold. After deduplication, relationship IDs are remapped and self-loops are removed. The resulting entities and relationships are stored in the in-memory graph.
+Acceptance Criteria:
+Duplicate entities of the same type with names exceeding the similarity threshold (default 0.70) are merged.
+Merged entities retain the highest confidence score and combine evidence and source references.
+Relationships are remapped to surviving entity IDs after merge.
+Self-referencing relationships created by merges are removed.
+Graph renders without orphan references.
+5.4 Interactive Graph Visualization
+Description:
+The system shall render the extracted intelligence graph in both 2D (vis.js) and 3D (3d-force-graph) views. Nodes are colour-coded and shaped by entity type (11 types). Edges are colour-coded and styled by relationship type (24 types) with animated particles for financial flows. Users can click nodes or edges to view detailed information.
+Acceptance Criteria:
+Graph displays all entities and relationships with correct colour coding and shapes.
+Switching between 2D and 3D views preserves the graph data.
+Clicking a node opens the detail panel with name, type, confidence, evidence, properties, and source.
+Clicking an edge opens the detail panel with relationship type, label, confidence, evidence, and source.
+Confidence badge on detail panel shows a tooltip with the AI’s reasoning.
+5.5 Graph Editing & Undo
+Description:
+The system shall allow analysts to manually create and delete nodes and edges, use a connect mode (click two nodes to create a link), and undo any action with a stack supporting up to 50 steps.
+Acceptance Criteria:
+New nodes can be created with a name, type, and optional properties.
+New edges can be created between any two existing nodes with a specified relationship type.
+Connect mode allows creating an edge by clicking two nodes sequentially.
+Deleting a node also removes all connected edges.
+Undo restores the previous graph state; up to 50 undo steps are supported.
+Reset clears the entire graph.
+5.6 Path Analysis
+Description:
+The system shall provide a Path Finder that computes the shortest path (BFS) and all paths (DFS) between any two selected nodes, with configurable maximum depth.
+Acceptance Criteria:
+Shortest path is found using BFS with a configurable max depth (default 10).
+All paths are found using DFS with a configurable max depth (default 5) and max 10 results.
+Path results include the list of node IDs and edge IDs traversed.
+Found paths can be highlighted on the graph.
+5.7 AI Chat & Natural Language Querying
+Description:
+The system shall provide an AI Chat interface in the bottom panel where analysts can ask natural language questions about the current graph. The system sends the full graph context (entities and relationships) to the LLM and returns concise, entity-citing answers.
+Acceptance Criteria:
+Chat accepts free-text questions and returns answers within the bottom panel.
+Answers cite specific entity names and relationship types from the graph.
+Chat requires an API key (OpenAI or Anthropic).
+Chat interactions are recorded in the audit log.
+5.8 Review Queue for Low-Confidence Items
+Description:
+The system shall automatically flag entities and relationships with a confidence score at or below a threshold (default: 6) and present them in a Review Queue tab. Analysts can accept (promoting confidence to 6) or reject (permanently removing the item).
+Acceptance Criteria:
+Items with confidence score ≤ 6 appear in the Review Queue, sorted by score ascending.
+Accepting an item sets its confidence to “medium” and score to 6.
+Rejecting an entity removes it and all its connected relationships from the graph.
+Rejecting a relationship removes only that relationship.
+Accept/reject actions are reflected in the graph immediately and logged in the audit trail.
+5.9 Automated Reporting & Export
+Description:
+The system shall generate an automated HTML investigation report containing an entity table, relationship table, confidence summary (high/medium/low counts), and the last 50 audit log entries. Additionally, the graph image can be exported as PNG, SVG, or PDF.
+Acceptance Criteria:
+HTML report contains all current graph data in tabular format.
+Report includes a summary panel showing entity count, relationship count, and confidence breakdown.
+Report is printable to PDF from the browser.
+Graph image export supports PNG, SVG, and PDF formats.
+5.10 Audit Logging
+Description:
+The system shall log all user actions with a timestamp, action type, and relevant details. Actions include document uploads, node/edge creation and deletion, undo, reset, AI chat queries, review accept/reject, and path finder usage. The log is viewable in the Audit Log tab.
+Acceptance Criteria:
+Every create, delete, undo, upload, chat, review, and path-find action is logged.
+Each log entry includes a timestamp, action name, and detail payload.
+Audit log is viewable and scrollable in the bottom panel Audit Log tab.
+Audit log data is included in the exported HTML report.
+
+6. User Experience
+Users interact with the Forensic Graph Intelligence platform through the following components and workflows:
+Right Sidebar — Configuration & Upload
+Users enter their API key(s) (OpenAI and/or Anthropic), select documents to upload, assign a document type per file, choose incremental or new graph mode, and trigger processing. A demo button is available for quick evaluation.
+Graph Canvas — 2D / 3D Visualization
+The central area renders the intelligence graph. Users can toggle between 2D (vis.js) and 3D (3d-force-graph) views, zoom, pan, and click nodes or edges to inspect details.
+Left Panel — Node & Edge Detail
+When a node or edge is selected, the left panel displays its full detail: name, type, confidence score with AI reasoning tooltip, evidence text, properties, and source document reference. Action buttons allow deletion, evidence update, and source document navigation.
+Toolbar — Analysis & Manipulation
+The horizontal toolbar provides search/filter, connect mode, add node, sticky notes, visual grouping, timeline view, path finder, undo, reset, and export controls.
+Bottom Panel — 4 Tabs
+A collapsible bottom panel hosts four tabs: AI Chat for natural language querying, Review Queue for triaging low-confidence items, Document Viewer for inline file preview, and Audit Log for viewing the full action history.
+Export & Reporting
+Users can export the graph as PNG/SVG/PDF images or generate a full HTML investigation report that includes entity and relationship tables, confidence summary, and audit log.
+7. Success Metrics
+Document-to-graph generation in under 5 minutes for a typical document set (3–5 documents).
+Analyst adoption within EY Forensic & Integrity Services engagements.
+Measurable reduction in manual link-charting and entity extraction effort.
+AI extraction accuracy validated by analyst review queue acceptance rate (target: >70% acceptance).
+Demonstrated reusability across different investigation types (fraud, AML, asset tracing).
+Foundation established for Phase 2 enhancements (persistent storage, RBAC, client deployment).
+Positive feedback from EY Forensic engagement leads on usability and output quality.
+8. Assumptions
+Users will provide their own OpenAI or Anthropic API keys for LLM access.
+Investigation documents are in English.
+Document quality is sufficient for text extraction (not scanned images requiring OCR).
+The tool runs locally or on an internal EY server with no public internet exposure of the application.
+The 11 entity types and 24 relationship types cover the majority of forensic investigation scenarios.
+Subject matter expert (SME) availability for validation of extraction accuracy is estimated at less than 1 hour per week.
+Scoring methodology (confidence 1–10) is accepted by engagement leads before operational use.
+Control of document uploads and graph data remains with the individual analyst session (no shared state).
+
+9. Appendix
+A. Entity Type Reference
+
+B. Relationship Type Reference
+
+C. Document Type Classifications
+
+D. Architecture Overview
+The Forensic Graph Intelligence PoC uses a lightweight, single-server architecture:
+Backend: Python FastAPI application serving REST API endpoints.
+Frontend: Single-page HTML/JavaScript application (Jinja2 template) with vis.js and 3d-force-graph libraries.
+LLM Integration: Supports OpenAI API (GPT-4o-mini) and Anthropic API (Claude) via official Python SDKs.
+Text Extraction: PyMuPDF for PDF, python-docx for DOCX, built-in file I/O for TXT/MD.
+Storage: In-memory Python data structures (entities, relationships, undo stack). No persistent database.
+Audit Log: JSONL file (audit_log.jsonl) for action history.
+Deployment: Local execution via uvicorn on port 8050.
+Document Title | Owner | Created On | Status
+BRD — Forensic Graph Intelligence PoC | [Owner Name] | 31/03/2026 | Draft
+Version | Date of Revision | Changed By | Change Description
+0.1 | 31/03/2026 | [Author Name] | Document Creation
+Name | Role | Date
+[Sponsor Name] | Sponsor | 
+[SME Name] | SME | 
+[SME Name] | SME | 
+[Reviewer Name] | Reviewer | 
+Entity Type | Description
+Person | An individual (suspect, witness, employee, director, etc.)
+Organisation | A company, shell entity, NGO, or government body
+Account | A bank account, brokerage account, or crypto wallet
+Phone | A phone number (mobile or landline)
+Address | A physical address (residential, office, registered)
+Vehicle | A vehicle (car, boat, aircraft)
+Email | An email address
+MoneyTransfer | A specific financial transaction or wire transfer
+Document | A legal document, agreement, or filing
+Event | A meeting, board session, trip, or incident
+Location | A country, city, or jurisdiction
+Relationship Type | Description
+owns | Ownership of an asset, account, or entity
+works_for | Employment or contractual engagement
+related_to | General association
+transferred_money_to | Financial transfer between accounts
+communicated_with | Phone, email, or messaging communication
+located_at | Physical or registered address association
+associated_with | Non-specific connection
+controls | Shadow directorship or beneficial control
+registered_to | Formal registration (phone, email, vehicle)
+paid_by | Payment relationship
+met_with | In-person meeting or event attendance
+traveled_to | Travel to a location
+signed | Signatory on a document or agreement
+witnessed | Witness to a document or event
+received_from | Receipt of funds or items
+shareholder_of | Equity ownership in an organisation
+board_member_of | Board membership
+family | Family relationship (spouse, sibling, parent)
+referred_by | Referral or introduction
+financed | Provision of financing
+sold_shares_to | Equity transfer
+trades_with | Trading relationship
+managed_by | Management relationship
+ceo_of | Chief Executive Officer role
+director_of | Directorship role
+Document Type | Description
+Bank Statement | Account statements from financial institutions
+Corporate Filing | Company registration, annual returns, shareholder records
+Investigation Report | Internal or external investigation reports
+Interview Transcript | Transcripts of witness or suspect interviews
+Phone/Comms Records | Call detail records, messaging logs
+Legal Agreement | Contracts, NDAs, nominee agreements
+Property Records | Land registry, property ownership documents
+Travel Records | Flight manifests, hotel records, visa stamps
+Other | Any document not matching the above categories

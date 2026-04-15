@@ -1,0 +1,221 @@
+Total Comments Found: 46
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: This feels somewhat disproportionate to the expected benefit. If the functionality works well out of the box, it makes sense to retain it; however, if any additional effort or customisation is required, I would suggest dropping it.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Agreed on principle. The 3D view can be delivered using an off-the-shelf library (3d-force-graph) with virtually no custom development. It requires no additional effort beyond the base 2D implementation. 
+Recommend retaining as a low-cost differentiator - might be useful for demos and large graph exploration. We can label it "BETA" to set expectations.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Is it possible to consider adding OCR capabilities?
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Yes, achievable using Azure Document Intelligence however should be deferred to Phase 2
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Can we add Arabic in the scope? Many of the official documents we may use to construct graphs can be in Arabic
+
+--- Comment ---
+Author: Laith Mufti
+Comment: For text-based documents (searchable PDFs, DOCX), Arabic is supported natively by the underlying LLM with no additional development. Recommend adding Arabic text documents to Phase 1 scope. Scanned Arabic documents (requiring OCR) would need Phase 2 implementation.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: We should add functionality to allow users to upload xlsx and csv files. A typical use case would be the upload of transactional records, with the solution constructing transactional linkages between nodes (i.e. transaction counterparties). Ideally, the functionality should also support aggregation of transactions, both by value and  by number of transactions.
+
+While I appreciate that this may appear to be a deviation from the original scope, this capability is critical. We discussed this with Alex, and the consolidated view is that, without this feature, it will be difficult to position the tool as a meaningful differentiator.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Understood and agreed on importance. 
+
+The approach would be:
+Add CSV/XLSX upload with a column-mapping interface (user maps From, To, Amount, Date columns)
+Auto-create counterparty nodes and transactional edges
+Support aggregation by counterparty pair (total value + count).
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Overall agreed, but I’ll need an explanation how is it going to work
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Will there be functionality to support batch document uploads across multiple phases? For example, uploading an initial report to generate a baseline graph, and subsequently augmenting it by uploading additional documents.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Yes, this is part of the core architecture. 
+
+The extraction pipeline is designed to merge new entities and relationships into the existing graph with deduplication. Users can upload an initial set, review the graph, then upload additional documents to augment it.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Ideally, the solution should also allow for a second‑level, manual deduplication process.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: The system will include node editing (rename, retype, delete) and manual link creation. To address this specifically, we can add a "Merge Nodes" function where the user selects two duplicate entities and combines them, preserving all connections from both.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Muhammad Talli
+Comment: Can we incorporate familial relationship mapping between individuals? In many cases, people share different components of the same name—such as the father’s name, grandfather’s name, or family name. Adding this capability would help identify precise relationships and allow grouping based on these shared name elements.
+
+--- Comment ---
+Author: Muhammad Talli
+Comment: Lana comment:
+• How does the model handle conflicting information across multiple sources? (ex. multiple positions in the same company across different time periods or documents)
+ • What safeguards are in place to prevent hallucinated relationships?
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Talli: 
+The extraction pipeline can be configured via prompt engineering to identify familial relationships based on Arabic patronymic naming conventions (ibn/bint/al- patterns). 
+A family relationship type is already in the schema.
+
+Output accuracy has to be tightened during the UAT.
+
+Lana:
+The architecture includes several safeguards:
+3-pass extraction with cross validation
+Source traceability
+Review queue
+Evidence preservation
+
+It is important to note, although these safe-guards exist, hallucinations are still probable to a certain % (nature of AI systems).
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: There is no need to apply colour‑coding to each node by default. Instead, could we please:
+Use distinct icons to represent each node type; and
+Populate all nodes using a standard default colour, with the option for users to manually change the node colour where required.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: + Include a "Color mode" toggle:
+"Color by type" (default for analysts) vs "Uniform color".
+Users can also override individual node colours. 
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: How will the solution handle scenarios where multiple types of relationships exist between the same nodes (e.g. works_for, related_to, transferred_money_to)? Will it support representing multiple edge types between the same pair of nodes?
+
+--- Comment ---
+Author: Laith Mufti
+Comment: The graph engine will detect parallel edges between the same node pair and render them as separate curved arcs so they are visually distinct and individually selectable. Each edge retains its own type, label, evidence, and confidence. 
+
+However post implementation the representation “clarity” must be evaluated.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: There is no need to apply colour‑coding to edges, as this is likely to distract users. Instead, could we introduce the option to render edges as dashed lines, with support for different dash patterns to distinguish between edge types where needed?
+
+--- Comment ---
+Author: Laith Mufti
+Comment: (+) include an "Edge style" toggle:
+"Color" (default) vs "Dash patterns" vs "Monochrome"
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: For visualisation purposes, it would be helpful to include an option to add text boxes to the chart (e.g. rectangular call‑outs with supporting text).
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Noted. 
+The design will include canvas-based text annotations (rectangular call-outs with title, body text, configurable colours, and resize/drag). Useful for adding analyst commentary directly on the chart
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Many of these charts will be presented to clients and therefore need to be clear and easy to interpret. One of the most effective ways to improve chart readability is to minimise or eliminate crossed edges. To achieve this, it would be helpful to have the ability to bend edges at defined angles or corners. Is this doable?
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Yes. The design includes an orthogonal edge routing engine (ELK) that automatically routes edges with right-angle bends to minimize crossings. 
+
+Additionally, users will be able to manually add "joints" to any edge (right-click ->Add Joint) and drag them to create custom bends. This is a core feature of the layout engine 
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: I see limited practical value in this. Let’s first discuss the level of effort involved. If it can be implemented with minimal effort, we can include it; otherwise, I suggest dropping it.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: The AI chat is a thin integration layer on top of the same LLM already used for extraction. It provides natural-language querying of the graph ("show all money flows over 1M", "who is connected to X?")
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: I do not see an explanation of how the confidence score is calculated.
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Valid feedback. The BRD should include a section explaining the methodology.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Am I right that the confidence score is not going to be visible on the chart? If so, agreed
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: + Social Media Account
+
+--- Comment ---
+Author: Laith Mufti
+Comment: Noted.
+
+--- Comment ---
+Author: Vladislav Dimitrov
+Comment: Agreed
+
