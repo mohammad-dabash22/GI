@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         :root {
@@ -543,9 +544,9 @@
                 <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()" style="padding:20px;border-color:#3a3a3a">
                     <div style="font-size:18px;color:#444;margin-bottom:4px">&#8686;</div>
                     <p style="font-weight:500;color:#777">Click or drag files</p>
-                    <p class="hint">PDF, DOCX, TXT</p>
+                    <p class="hint">PDF, DOCX, TXT, XLSX, CSV</p>
                 </div>
-                <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md" style="display:none">
+                <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv" style="display:none">
                 <div class="file-list" id="fileList"></div>
                 <div style="display:flex;gap:4px;align-items:center">
                     <button class="btn btn-primary" id="processBtn" disabled onclick="processDocuments()" style="flex:1">Extract & Map</button>
@@ -571,6 +572,33 @@
             <div class="errors" id="errorContainer"></div>
         </div>
     </div>
+</div>
+
+<!-- Column Mapper Modal (XLSX/CSV) -->
+<div class="modal-overlay" id="columnMapperModal">
+<div class="modal" style="max-width:750px;width:95%">
+    <h3 style="margin-bottom:4px">Map Columns — <span id="cmFileName"></span></h3>
+    <p style="font-size:11px;color:var(--t-muted);margin-bottom:12px">Assign a role to each column. "From Entity" and "To Entity" are required.</p>
+    <div style="overflow-x:auto;max-height:320px;border:1px solid var(--t-border);border-radius:5px;margin-bottom:12px">
+        <table id="cmPreviewTable" style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead id="cmTableHead"></thead>
+            <tbody id="cmTableBody"></tbody>
+        </table>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <label style="font-size:11px;color:var(--t-muted);white-space:nowrap">Default Entity Type:</label>
+        <select id="cmDefaultType" style="background:var(--t-input);border:1px solid var(--t-border);border-radius:4px;color:var(--t-text);padding:4px 8px;font-size:11px">
+            <option value="Account" selected>Account</option>
+            <option value="Person">Person</option>
+            <option value="Organization">Organization</option>
+        </select>
+    </div>
+    <div id="cmError" style="display:none;color:#e55;font-size:11px;margin-bottom:8px"></div>
+    <div class="modal-actions">
+        <button class="btn btn-danger" onclick="closeColumnMapper()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitStructuredImport()">Import</button>
+    </div>
+</div>
 </div>
 
 <!-- Modals -->
@@ -1177,7 +1205,139 @@ const uploadArea = document.getElementById('uploadArea');
 uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#666'; });
 uploadArea.addEventListener('dragleave', () => uploadArea.style.borderColor = '#333');
 uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.style.borderColor = '#333'; addFiles(Array.from(e.dataTransfer.files)); });
-function addFiles(files) { for (const f of files) if (!selectedFiles.find(s=>s.name===f.name)) selectedFiles.push(f); renderFileList(); }
+function addFiles(files) {
+    for (const f of files) {
+        const ext = f.name.split('.').pop().toLowerCase();
+        if (ext === 'xlsx' || ext === 'csv') {
+            _handleStructuredFile(f);
+            return;
+        }
+        if (!selectedFiles.find(s=>s.name===f.name)) selectedFiles.push(f);
+    }
+    renderFileList();
+}
+
+// ===== STRUCTURED FILE (XLSX/CSV) HANDLING =====
+let _structuredFile = null;
+let _structuredRows = [];
+let _structuredHeaders = [];
+
+function _handleStructuredFile(file) {
+    _structuredFile = file;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (!rows.length) { alert('No data found in file.'); return; }
+        _structuredHeaders = rows[0] || [];
+        _structuredRows = rows.slice(1);
+        _openColumnMapper();
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function _openColumnMapper() {
+    document.getElementById('cmFileName').textContent = _structuredFile.name;
+    document.getElementById('cmError').style.display = 'none';
+    const roleOptions = ['(skip)','From Entity','To Entity','Amount','Date','Reference','From Type','To Type'];
+    const roleOpts = roleOptions.map(r => `<option value="${r}">${r}</option>`).join('');
+
+    // Header row with dropdowns
+    let headHtml = '<tr>';
+    _structuredHeaders.forEach((h, ci) => {
+        headHtml += `<th style="padding:6px 8px;background:var(--t-panel);border-bottom:2px solid var(--t-border);text-align:left;white-space:nowrap">
+            <div style="margin-bottom:4px"><select id="cmRole_${ci}" style="background:var(--t-input);border:1px solid var(--t-border);border-radius:3px;color:var(--t-text);padding:3px 6px;font-size:10px;width:100%">${roleOpts}</select></div>
+            <div style="font-size:10px;color:var(--t-faint)">${h || 'Column '+(ci+1)}</div>
+        </th>`;
+    });
+    headHtml += '</tr>';
+    document.getElementById('cmTableHead').innerHTML = headHtml;
+
+    // Preview first 10 data rows
+    const preview = _structuredRows.slice(0, 10);
+    let bodyHtml = '';
+    preview.forEach(row => {
+        bodyHtml += '<tr>';
+        _structuredHeaders.forEach((_, ci) => {
+            const val = row[ci] !== undefined ? row[ci] : '';
+            bodyHtml += `<td style="padding:4px 8px;border-bottom:1px solid var(--t-border);color:var(--t-muted);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis">${val}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    if (_structuredRows.length > 10) {
+        bodyHtml += `<tr><td colspan="${_structuredHeaders.length}" style="padding:6px 8px;color:var(--t-faint);font-style:italic;text-align:center">... and ${_structuredRows.length - 10} more rows</td></tr>`;
+    }
+    document.getElementById('cmTableBody').innerHTML = bodyHtml;
+    document.getElementById('columnMapperModal').classList.add('open');
+}
+
+function closeColumnMapper() {
+    document.getElementById('columnMapperModal').classList.remove('open');
+    _structuredFile = null;
+    _structuredRows = [];
+    _structuredHeaders = [];
+}
+
+async function submitStructuredImport() {
+    const mapping = {};
+    const roleMap = {
+        'From Entity': 'from_entity', 'To Entity': 'to_entity',
+        'Amount': 'amount', 'Date': 'date', 'Reference': 'reference',
+        'From Type': 'from_type', 'To Type': 'to_type'
+    };
+    _structuredHeaders.forEach((_, ci) => {
+        const sel = document.getElementById(`cmRole_${ci}`);
+        if (sel && sel.value !== '(skip)') {
+            const key = roleMap[sel.value];
+            if (key) mapping[key] = ci;
+        }
+    });
+
+    if (mapping.from_entity === undefined || mapping.to_entity === undefined) {
+        const errEl = document.getElementById('cmError');
+        errEl.textContent = 'You must map both "From Entity" and "To Entity" columns.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    const payload = {
+        project_id: PROJECT_ID,
+        mode: allNodes.length ? 'incremental' : 'new',
+        filename: _structuredFile.name,
+        mapping: mapping,
+        default_entity_type: document.getElementById('cmDefaultType').value,
+        rows: _structuredRows
+    };
+
+    closeColumnMapper();
+    show('Importing structured data...');
+
+    try {
+        const resp = await fetch('/api/upload-structured', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const d = await resp.json();
+        if (d.success) {
+            loadGraphData(d.graph);
+            updateStats(d.entity_count, d.relationship_count);
+            showErrors(d.errors);
+            const s = d.structured || {};
+            show_done(`Imported: ${s.entities_created||0} entities, ${s.aggregated_edges||0} aggregated edges (${s.rows_processed||0} rows)`);
+        } else {
+            alert(d.error || 'Import failed');
+        }
+    } catch(e) {
+        alert('Request failed: ' + e.message);
+    } finally {
+        setTimeout(hide, 4000);
+    }
+}
+
 function removeFile(i) { selectedFiles.splice(i,1); renderFileList(); }
 function renderFileList() {
     const opts = DOC_TYPES.map(t=>`<option value="${t}">${t}</option>`).join('');
@@ -1245,7 +1405,7 @@ function _updateEntityBreakdown() {
     allNodes.forEach(n => { counts[n.type] = (counts[n.type]||0) + 1; });
     const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
     const max = sorted[0]?sorted[0][1]:1;
-    const _typeColors = {Person:'#4fc3f7',Organization:'#ff9800',Account:'#ab47bc',Phone:'#66bb6a',Address:'#26c6da',Vehicle:'#ef5350',Email:'#7e57c2',MoneyTransfer:'#ef5350',Document:'#78909c',Event:'#ec407a',Location:'#26c6da'};
+    const _typeColors = {Person:'#4fc3f7',Organization:'#ff9800',Account:'#ab47bc',Phone:'#66bb6a',Address:'#26c6da',Vehicle:'#ef5350',Email:'#7e57c2',MoneyTransfer:'#ef5350',Document:'#78909c',Event:'#ec407a',Location:'#26c6da','Social Media Account':'#1DA1F2'};
     el.innerHTML = sorted.map(([type, count]) => {
         const pct = Math.max(8, (count/max)*100);
         const color = _typeColors[type] || '#888';
@@ -2526,7 +2686,7 @@ function _showNodeDetailPanel(node) {
     document.getElementById('emptyDetail').style.display='none';
     const dc=document.getElementById('detailContent');dc.style.display='block';
 
-    const _eTypes = ['Person','Organization','Account','Phone','Address','Vehicle','Email','MoneyTransfer','Document','Event','Location'];
+    const _eTypes = ['Person','Organization','Account','Phone','Address','Vehicle','Email','MoneyTransfer','Document','Event','Location','Social Media Account'];
     const typeOpts = _eTypes.map(t => `<option value="${t}"${t===node.type?' selected':''}>${t}</option>`).join('');
 
     const props = node.properties || {};
@@ -2561,6 +2721,17 @@ function _showNodeDetailPanel(node) {
                 ${src?`<div style="margin-bottom:3px"><span style="font-size:10px;color:var(--t-faint);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();viewSourceDocument('${src.replace(/'/g,"\\'")}')">${srcClean}</span></div>`:''}
                 ${evid?`<div><span style="font-size:10px;color:var(--t-faint);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();var el=document.getElementById('${evidId}');el.style.display=el.style.display==='none'?'block':'none'">evidence</span>
                 <div id="${evidId}" style="display:none;font-size:11px;color:var(--t-muted);font-style:italic;margin-top:4px;padding:6px 8px;background:var(--t-panel);border-radius:3px;border:1px solid var(--t-border);line-height:1.4">"${evid.replace(/</g,'&lt;')}"</div></div>`:''}
+                ${(()=>{
+                    const txns = (l.properties||{}).transactions;
+                    if (!txns || !txns.length) return '';
+                    const txnId = 'txn_drill_'+ci;
+                    let tbl = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:4px"><thead><tr><th style="text-align:left;padding:3px 6px;border-bottom:1px solid var(--t-border);color:var(--t-faint)">Date</th><th style="text-align:right;padding:3px 6px;border-bottom:1px solid var(--t-border);color:var(--t-faint)">Amount</th><th style="text-align:left;padding:3px 6px;border-bottom:1px solid var(--t-border);color:var(--t-faint)">Reference</th></tr></thead><tbody>';
+                    txns.forEach(t => {
+                        tbl += '<tr><td style="padding:2px 6px;border-bottom:1px solid var(--t-border);color:var(--t-muted)">'+(t.start_date||'-')+'</td><td style="padding:2px 6px;border-bottom:1px solid var(--t-border);color:var(--t-muted);text-align:right">'+(t.amount!=null?t.amount:'-')+'</td><td style="padding:2px 6px;border-bottom:1px solid var(--t-border);color:var(--t-muted)">'+(t.reference||'-')+'</td></tr>';
+                    });
+                    tbl += '</tbody></table>';
+                    return '<div style="margin-top:4px"><span style="font-size:10px;color:var(--t-faint);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();var el=document.getElementById(\''+txnId+'\');el.style.display=el.style.display===\'none\'?\'block\':\'none\'">'+txns.length+' transactions</span><div id="'+txnId+'" style="display:none;max-height:200px;overflow-y:auto;margin-top:4px;padding:4px;background:var(--t-panel);border-radius:3px;border:1px solid var(--t-border)">'+tbl+'</div></div>';
+                })()}
             </div>`;
         }).join('');
         connHtml = `<div class="detail-field"><div class="field-label">Connections (${conns.length})</div><div style="max-height:365px;overflow-y:auto;overflow-x:hidden;margin-top:6px">${rows}</div></div>`;

@@ -45,3 +45,21 @@ async def pipeline_status(
         "current_pass": ps["current_pass"],
         "pass_detail": ps["pass_detail"],
     })
+
+
+@router.post("/upload-structured")
+async def upload_structured(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Ingest structured XLSX/CSV data (parsed client-side).
+
+    Expects JSON body with: project_id, mode, filename, mapping,
+    default_entity_type, rows.
+    """
+    result = upload_service.process_structured_upload(
+        payload, user.get("username", ""), db
+    )
+    status_code = result.pop("status_code", 200)
+    return JSONResponse(result, status_code=status_code)

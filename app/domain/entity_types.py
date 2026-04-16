@@ -3,6 +3,7 @@
 ENTITY_TYPES = [
     "Person", "Organization", "Account", "Phone", "Address",
     "Vehicle", "Email", "MoneyTransfer", "Document", "Event", "Location",
+    "SocialMediaAccount",
 ]
 
 ENTITY_STYLES = {
@@ -16,7 +17,8 @@ ENTITY_STYLES = {
     "MoneyTransfer": {"color": "#ED5565", "shape": "star",         "size": 22, "emoji": "\U0001F4B5"},
     "Document":      {"color": "#6C7AE0", "shape": "square",       "size": 18, "emoji": "\U0001F4C4"},
     "Event":         {"color": "#E84393", "shape": "diamond",      "size": 20, "emoji": "\U0001F4C5"},
-    "Location":      {"color": "#00B894", "shape": "triangleDown", "size": 20, "emoji": "\U0001F30D"},
+    "Location":             {"color": "#00B894", "shape": "triangleDown", "size": 20, "emoji": "\U0001F30D"},
+    "SocialMediaAccount": {"color": "#1DA1F2", "shape": "dot",          "size": 20, "emoji": "\U0001F4F1"},
 }
 
 DEFAULT_NODE_STYLE = ENTITY_STYLES["Person"]

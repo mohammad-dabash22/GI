@@ -16,7 +16,7 @@ except ImportError:
 # ── File storage ─────────────────────────────────────────────────────────────
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".md"}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".md", ".xlsx", ".csv"}
 
 # ── Security ─────────────────────────────────────────────────────────────────
 

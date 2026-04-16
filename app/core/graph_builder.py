@@ -95,6 +95,7 @@ def build_graph_data(entities: list[dict], relationships: list[dict]) -> dict:
             "confidence": rel.get("confidence", "medium"),
             "confidenceScore": rel.get("confidence_score", 5),
             "confidenceReason": rel.get("confidence_reason", ""),
+            "properties": props,
             "startDate": props.get("start_date", ""),
             "endDate": props.get("end_date", ""),
         })
