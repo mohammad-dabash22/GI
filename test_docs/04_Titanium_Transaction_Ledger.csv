@@ -1,0 +1,91 @@
+Sender,Receiver,Amount_USD,Date,Description,Sender_Type,Receiver_Type
+Horizon Build Group,Titanium Manufacturing Corp,73851.79,2023-10-01,INV-HB-1000,Account,Account
+Nexus Engineering,Titanium Manufacturing Corp,169055.5,2023-10-01,INV-NE-1001,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,26080.46,2023-10-01,PO-STEEL-1002,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,13575.54,2023-10-01,PO-PARTS-1003,Account,Account
+Titanium Manufacturing Corp,Payroll Processing,190721.25,2023-10-02,PR-RUN-Oct,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,29148.41,2023-10-08,PO-STEEL-1005,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,9626.92,2023-10-08,PO-PARTS-1006,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,80794.55,2023-10-09,INV-HB-1007,Account,Account
+Nexus Engineering,Titanium Manufacturing Corp,123487.19,2023-10-15,INV-NE-1008,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,20179.46,2023-10-15,PO-STEEL-1009,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,12523.02,2023-10-15,PO-PARTS-1010,Account,Account
+Titanium Manufacturing Corp,Payroll Processing,184033.08,2023-10-16,PR-RUN-Oct,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,107623.8,2023-10-17,INV-HB-1012,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,34266.57,2023-10-17,FREIGHT-EXP-1013,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,40087.12,2023-10-19,FREIGHT-EXP-1014,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,27503.59,2023-10-22,PO-STEEL-1015,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,12818.26,2023-10-22,PO-PARTS-1016,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,47424.9,2023-10-22,FREIGHT-EXP-1017,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,61614.22,2023-10-25,INV-HB-1018,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,47367.74,2023-10-25,FREIGHT-EXP-1019,Account,Account
+Nexus Engineering,Titanium Manufacturing Corp,81931.07,2023-10-29,INV-NE-1020,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,20503.66,2023-10-29,PO-STEEL-1021,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,10518.28,2023-10-29,PO-PARTS-1022,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,22736.96,2023-10-29,FREIGHT-EXP-1023,Account,Account
+Titanium Manufacturing Corp,Payroll Processing,192373.47,2023-10-30,PR-RUN-Oct,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,44832.41,2023-10-31,FREIGHT-EXP-1025,Account,Account
+Apex Logistics LLC,Thomas Mitchell,23783.65,2023-10-31,OWNER-DRAW-1026,Account,Person
+Horizon Build Group,Titanium Manufacturing Corp,56769.63,2023-11-02,INV-HB-1027,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,47132.89,2023-11-02,FREIGHT-EXP-1028,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,58946.02,2023-11-03,FREIGHT-EXP-1029,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,47038.28,2023-11-04,FREIGHT-EXP-1030,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,21923.87,2023-11-05,PO-STEEL-1031,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,10068.44,2023-11-05,PO-PARTS-1032,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,45518.86,2023-11-06,FREIGHT-EXP-1033,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,91024.63,2023-11-10,INV-HB-1034,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,33075.24,2023-11-10,FREIGHT-EXP-1035,Account,Account
+Apex Logistics LLC,Thomas Mitchell,24354.22,2023-11-10,OWNER-DRAW-1036,Account,Person
+Nexus Engineering,Titanium Manufacturing Corp,161669.27,2023-11-12,INV-NE-1037,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,29702.1,2023-11-12,PO-STEEL-1038,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,14814.18,2023-11-12,PO-PARTS-1039,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,26771.39,2023-11-12,FREIGHT-EXP-1040,Account,Account
+Titanium Manufacturing Corp,Payroll Processing,197070.86,2023-11-13,PR-RUN-Nov,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,57136.42,2023-11-14,FREIGHT-EXP-1042,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,100876.37,2023-11-18,INV-HB-1043,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,23697.88,2023-11-18,FREIGHT-EXP-1044,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,36540.2,2023-11-19,PO-STEEL-1045,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,5112.91,2023-11-19,PO-PARTS-1046,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,21117.8,2023-11-20,FREIGHT-EXP-1047,Account,Account
+Apex Logistics LLC,Thomas Mitchell,14170.4,2023-11-20,OWNER-DRAW-1048,Account,Person
+Titanium Manufacturing Corp,Apex Logistics LLC,52457.25,2023-11-24,FREIGHT-EXP-1049,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,126413.98,2023-11-26,INV-HB-1050,Account,Account
+Nexus Engineering,Titanium Manufacturing Corp,131240.66,2023-11-26,INV-NE-1051,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,25961.56,2023-11-26,PO-STEEL-1052,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,10436.01,2023-11-26,PO-PARTS-1053,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,45648.32,2023-11-26,FREIGHT-EXP-1054,Account,Account
+Titanium Manufacturing Corp,Payroll Processing,209912.53,2023-11-27,PR-RUN-Nov,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,36273.23,2023-11-30,FREIGHT-EXP-1056,Account,Account
+Apex Logistics LLC,Thomas Mitchell,17775.6,2023-11-30,OWNER-DRAW-1057,Account,Person
+Titanium Manufacturing Corp,Apex Logistics LLC,26938.24,2023-12-02,FREIGHT-EXP-1058,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,38494.55,2023-12-03,PO-STEEL-1059,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,13558.1,2023-12-03,PO-PARTS-1060,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,17123.72,2023-12-03,FREIGHT-EXP-1061,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,145873.11,2023-12-04,INV-HB-1062,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,49052.09,2023-12-04,FREIGHT-EXP-1063,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,18177.39,2023-12-06,FREIGHT-EXP-1064,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,44035.1,2023-12-08,FREIGHT-EXP-1065,Account,Account
+Nexus Engineering,Titanium Manufacturing Corp,168802.78,2023-12-10,INV-NE-1066,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,26315.11,2023-12-10,PO-STEEL-1067,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,11728.73,2023-12-10,PO-PARTS-1068,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,26711.68,2023-12-10,FREIGHT-EXP-1069,Account,Account
+Apex Logistics LLC,Thomas Mitchell,23679.95,2023-12-10,OWNER-DRAW-1070,Account,Person
+Titanium Manufacturing Corp,Payroll Processing,208723.63,2023-12-11,PR-RUN-Dec,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,124164.07,2023-12-12,INV-HB-1072,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,17699.05,2023-12-12,FREIGHT-EXP-1073,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,18681.62,2023-12-14,FREIGHT-EXP-1074,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,26078.38,2023-12-17,PO-STEEL-1075,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,7421.71,2023-12-17,PO-PARTS-1076,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,39647.37,2023-12-18,FREIGHT-EXP-1077,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,131387.24,2023-12-20,INV-HB-1078,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,16464.93,2023-12-20,FREIGHT-EXP-1079,Account,Account
+Apex Logistics LLC,Thomas Mitchell,17080.08,2023-12-20,OWNER-DRAW-1080,Account,Person
+Titanium Manufacturing Corp,Apex Logistics LLC,27736.38,2023-12-21,FREIGHT-EXP-1081,Account,Account
+Nexus Engineering,Titanium Manufacturing Corp,92458.73,2023-12-24,INV-NE-1082,Account,Account
+Titanium Manufacturing Corp,Global Steel Suppliers Inc.,21610.41,2023-12-24,PO-STEEL-1083,Account,Account
+Titanium Manufacturing Corp,Metro Industrial Parts,14017.88,2023-12-24,PO-PARTS-1084,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,32088.18,2023-12-24,FREIGHT-EXP-1085,Account,Account
+Titanium Manufacturing Corp,Payroll Processing,191943.06,2023-12-25,PR-RUN-Dec,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,16633.56,2023-12-26,FREIGHT-EXP-1087,Account,Account
+Horizon Build Group,Titanium Manufacturing Corp,100115.09,2023-12-28,INV-HB-1088,Account,Account
+Titanium Manufacturing Corp,Apex Logistics LLC,33011.08,2023-12-28,FREIGHT-EXP-1089,Account,Account

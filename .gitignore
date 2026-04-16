@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+uploads/
+.env
+audit_log.jsonl
+~$*
+*.db
+server.log
+brd_comments.txt
+brd_extracted.txt
+brd_v02_extracted.txt
+scratch/
