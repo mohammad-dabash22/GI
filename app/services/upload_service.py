@@ -230,10 +230,15 @@ def process_structured_upload(
     data: dict,
     username: str,
     db: Session,
+    *,
+    file_content: bytes | None = None,
+    original_filename: str | None = None,
 ) -> dict:
     """Process a structured (XLSX/CSV) upload. No AI involved.
 
     data keys: project_id, mode, filename, mapping, default_entity_type, rows
+    file_content: raw bytes of the original file (saved to disk for the doc viewer)
+    original_filename: client-reported filename (used for DocumentRecord)
     Returns the API response dict.
     """
     project_id = data["project_id"]
@@ -246,6 +251,24 @@ def process_structured_upload(
     require_project(project_id, db)
     gs = load_graph(project_id, db)
     push_undo(project_id, gs.entities, gs.relationships)
+
+    # Save the raw file to disk and create a DocumentRecord so it appears
+    # in the document viewer, mirroring the unstructured upload flow.
+    if file_content:
+        _fname = original_filename or filename
+        safe_name = f"{uuid.uuid4().hex}_{_fname}"
+        save_path = os.path.join(UPLOAD_DIR, safe_name)
+        with open(save_path, "wb") as fh:
+            fh.write(file_content)
+        doc_rec = DocumentRecord(
+            project_id=project_id,
+            original_name=_fname,
+            stored_filename=safe_name,
+            doc_type="Structured Data",
+            file_path=save_path,
+        )
+        db.add(doc_rec)
+        db.commit()
 
     if mode == "new":
         gs.entities.clear()

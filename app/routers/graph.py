@@ -13,7 +13,7 @@ from app.services.auth_service import get_current_user
 from app.services import graph_service
 from app.schemas.graph import (
     ProjectIdRequest, CreateNodeRequest, DeleteNodeRequest,
-    CreateConnectionRequest, DeleteConnectionRequest,
+    CreateConnectionRequest, DeleteConnectionRequest, MergeNodesRequest,
     UpdateEntityRequest, UpdateEdgeRequest,
     UpdateEvidenceLegacyRequest, UpdateEdgeEvidenceLegacyRequest,
 )
@@ -82,6 +82,18 @@ async def delete_connection(
 ):
     return JSONResponse(graph_service.delete_connection(
         body.project_id, body.edge_id, user.get("username", ""), db
+    ))
+
+
+@router.post("/graph/merge")
+async def merge_nodes(
+    body: MergeNodesRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return JSONResponse(graph_service.merge_nodes(
+        body.project_id, body.target_id, body.source_id,
+        user.get("username", ""), db
     ))
 
 

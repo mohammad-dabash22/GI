@@ -3,7 +3,7 @@
 from .auth import RegisterRequest, LoginRequest
 from .graph import (
     ProjectIdRequest, CreateNodeRequest, DeleteNodeRequest,
-    CreateConnectionRequest, DeleteConnectionRequest,
+    CreateConnectionRequest, DeleteConnectionRequest, MergeNodesRequest,
     UpdateEntityRequest, UpdateEdgeRequest,
     UpdateEvidenceLegacyRequest, UpdateEdgeEvidenceLegacyRequest,
     ReviewActionRequest, ReviewRestoreRequest,
@@ -14,7 +14,7 @@ from .projects import CreateProjectRequest, SavePositionsRequest
 __all__ = [
     "RegisterRequest", "LoginRequest",
     "ProjectIdRequest", "CreateNodeRequest", "DeleteNodeRequest",
-    "CreateConnectionRequest", "DeleteConnectionRequest",
+    "CreateConnectionRequest", "DeleteConnectionRequest", "MergeNodesRequest",
     "UpdateEntityRequest", "UpdateEdgeRequest",
     "UpdateEvidenceLegacyRequest", "UpdateEdgeEvidenceLegacyRequest",
     "ReviewActionRequest", "ReviewRestoreRequest",

@@ -33,7 +33,7 @@ def build_graph_data(entities: list[dict], relationships: list[dict]) -> dict:
             "id": entity["id"],
             "name": entity.get("name", entity["id"]),
             "type": etype,
-            "color": style["color"],
+            "color": entity.get("properties", {}).get("colorOverride") or style["color"],
             "shape": style["shape"],
             "size": base_size + hub_bonus,
             "emoji": style["emoji"],

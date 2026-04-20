@@ -381,6 +381,12 @@
                 </select>
                 <button class="tool-btn" id="labelToggleBtn" onclick="toggleEdgeLabels()">Aa Labels</button>
                 <button class="tool-btn" onclick="fitView()">&#8862; Fit</button>
+                <button class="tool-btn active" id="colorModeBtn" onclick="toggleColorMode()" title="Toggle node coloring mode">&#9679; Uniform</button>
+                <select id="edgeStyleSelect" onchange="changeEdgeStyleMode(this.value)" style="padding:4px 6px;background:var(--t-input);border:1px solid var(--t-border);border-radius:3px;color:var(--t-text);font-size:10px;font-family:inherit;cursor:pointer" title="Edge styling mode">
+                    <option value="colored">Colored Edges</option>
+                    <option value="monochrome" selected>Monochrome</option>
+                    <option value="dashed">Dash Patterns</option>
+                </select>
                 <button class="tool-btn" id="themeToggleBtn" onclick="toggleTheme()" style="margin-left:4px;font-weight:600">Light</button>
             </div>
             <div class="tb-group">
@@ -642,6 +648,20 @@
     <label>Properties (optional, key:value per line)</label><input type="text" id="nodeProps" placeholder="role:CEO, nationality:UK ...">
     <div class="modal-actions"><button class="btn btn-primary" onclick="submitNode()">Create</button></div>
 </div></div>
+<div class="modal-overlay" id="mergeModal"><div class="modal" style="position:relative">
+    <button onclick="closeMergeModal()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--t-muted);cursor:pointer;font-size:18px;padding:0">&times;</button>
+    <h3>Merge Nodes</h3>
+    <p style="font-size:11px;color:var(--t-muted);margin-bottom:14px">The source node will be absorbed into the target. All edges, evidence, and properties are combined. This can be undone.</p>
+    <label style="font-size:9px;text-transform:uppercase;color:var(--t-faint);letter-spacing:0.5px;margin-bottom:4px;display:block">Target (keep)</label>
+    <div id="mergeTargetPreview" style="padding:8px 12px;background:var(--t-input);border:1px solid var(--t-border);border-radius:4px;margin-bottom:12px;font-size:12px;color:var(--t-text)"></div>
+    <label style="font-size:9px;text-transform:uppercase;color:var(--t-faint);letter-spacing:0.5px;margin-bottom:4px;display:block">Source (remove)</label>
+    <div id="mergeSourcePreview" style="padding:8px 12px;background:var(--t-input);border:1px solid var(--t-border);border-radius:4px;margin-bottom:6px;font-size:12px;color:var(--t-text)"></div>
+    <button onclick="_swapMergeDirection()" style="background:none;border:none;color:var(--t-accent,#4fc3f7);font-size:10px;cursor:pointer;padding:2px 0;margin-bottom:14px;font-family:inherit">&#8645; Swap direction</button>
+    <div class="modal-actions">
+        <button class="btn" onclick="closeMergeModal()">Cancel</button>
+        <button class="btn btn-primary" id="mergeConfirmBtn" onclick="submitMerge()">Merge</button>
+    </div>
+</div></div>
 <!-- Edge bend popup -->
 <!-- Inline note popup -->
 <div id="notePopup" class="note-edit-popup">
@@ -774,6 +794,15 @@ let _activeLayout = null;
 let selectedFiles = [], connectMode = false, connectFromNode = null, currentView = '2d';
 let sidebarOpen = true;
 let currentTheme = localStorage.getItem('fgi_theme') || 'dark';
+let nodeColorMode = localStorage.getItem('fgi_nodeColorMode') || 'uniform';
+const UNIFORM_COLOR = '#888888';
+const _TYPE_DEFAULT_COLORS = {
+    Person:'#5B8DEF',Organization:'#F5A623',Account:'#7ED321',Phone:'#BD10E0',
+    Address:'#A0785A',Vehicle:'#6B7C8A',Email:'#4FC1E9',MoneyTransfer:'#ED5565',
+    Document:'#6C7AE0',Event:'#E84393',Location:'#00B894',SocialMediaAccount:'#1DA1F2'
+};
+let edgeStyleMode = localStorage.getItem('fgi_edgeStyleMode') || 'monochrome';
+const EDGE_MONO_COLOR = '#888888';
 let edgeRoutingMode = 'straight';
 let _currentLayoutKey = 'physics';
 let _activePathHighlight = null;
@@ -839,8 +868,9 @@ function toggleTheme() {
     if (currentView === '2d' && network && nodesDS && edgesDS) {
         const t = _themeColors();
         allNodes.forEach(n => {
-            const img = _generateNodeIcon(n.type, n.color, n.size);
-            nodesDS.update({id: n.id, image: img, color: {border: n.color, highlight: {border: currentTheme==='light'?'#333':'#fff'}, hover: {border: n.color}}});
+            const dc = _getNodeDisplayColor(n);
+            const img = _generateNodeIcon(n.type, dc, n.size);
+            nodesDS.update({id: n.id, image: img, color: {border: dc, highlight: {border: currentTheme==='light'?'#333':'#fff'}, hover: {border: dc}}});
         });
         network.setOptions({
             nodes: {font: {color: t.nodeLabel, strokeColor: t.nodeLabelStroke}},
@@ -849,6 +879,100 @@ function toggleTheme() {
         network.redraw();
     } else if (currentView === '2d' && allNodes.length) {
         _saveCurrentPositions(); render2D();
+    }
+}
+
+function toggleColorMode() {
+    nodeColorMode = nodeColorMode === 'type' ? 'uniform' : 'type';
+    localStorage.setItem('fgi_nodeColorMode', nodeColorMode);
+    const btn = document.getElementById('colorModeBtn');
+    btn.textContent = nodeColorMode === 'type' ? '\u25CF By Type' : '\u25CF Uniform';
+    if (nodeColorMode === 'uniform') btn.classList.add('active');
+    else btn.classList.remove('active');
+    _refreshNodeColors();
+}
+
+function _getNodeDisplayColor(node) {
+    if (nodeColorMode === 'uniform') return UNIFORM_COLOR;
+    return (node.properties && node.properties.colorOverride) || node.color;
+}
+
+function _refreshNodeColors() {
+    Object.keys(_iconCache).forEach(k => delete _iconCache[k]);
+
+    if (currentView === '2d' && nodesDS) {
+        allNodes.forEach(n => {
+            const displayColor = _getNodeDisplayColor(n);
+            const img = _generateNodeIcon(n.type, displayColor, n.size);
+            nodesDS.update({
+                id: n.id,
+                image: img,
+                color: {
+                    border: displayColor,
+                    highlight: { border: currentTheme === 'light' ? '#333' : '#fff' },
+                    hover: { border: displayColor },
+                },
+            });
+        });
+        if (network) network.redraw();
+    } else if (currentView === '3d' && graph3d) {
+        graph3d.nodeThreeObject(n => {
+            const displayColor = _getNodeDisplayColor(n);
+            const tweaked = { ...n, color: displayColor };
+            return create3DNode(tweaked);
+        });
+        graph3d.graphData({
+            nodes: JSON.parse(JSON.stringify(allNodes)),
+            links: JSON.parse(JSON.stringify(allLinks)),
+        });
+    }
+}
+
+function changeEdgeStyleMode(mode) {
+    edgeStyleMode = mode;
+    localStorage.setItem('fgi_edgeStyleMode', mode);
+    const sel = document.getElementById('edgeStyleSelect');
+    if (sel) sel.value = mode;
+    _refreshEdgeStyles();
+}
+
+function _getEdgeDisplayColor(edge) {
+    if (edgeStyleMode === 'monochrome' || edgeStyleMode === 'dashed') {
+        return EDGE_MONO_COLOR;
+    }
+    return edge.color;
+}
+
+function _getEdgeDashes(edge) {
+    if (edgeStyleMode === 'dashed') return true;
+    if (edgeStyleMode === 'monochrome') return false;
+    return edge.dashes;
+}
+
+function _refreshEdgeStyles() {
+    if (currentView === '2d' && network && network._edgesDS) {
+        const allDsIds = network._edgesDS.getIds();
+        allLinks.forEach(l => {
+            const displayColor = _getEdgeDisplayColor(l);
+            const displayDashes = _getEdgeDashes(l);
+            const style = { color: { color: displayColor, highlight: displayColor }, dashes: displayDashes };
+            network._edgesDS.update({ id: l.id, ...style });
+            const prefix = l.id + '_seg';
+            allDsIds.forEach(sid => { if (sid.startsWith(prefix)) network._edgesDS.update({ id: sid, ...style }); });
+        });
+        if (network) network.redraw();
+    } else if (currentView === '3d' && graph3d) {
+        const displayLinks = allLinks.map(l => ({
+            ...l,
+            color: _getEdgeDisplayColor(l),
+        }));
+        graph3d.linkColor(l => _getEdgeDisplayColor(l))
+               .linkDirectionalParticleColor(l => _getEdgeDisplayColor(l))
+               .linkDirectionalArrowColor(l => _getEdgeDisplayColor(l));
+        graph3d.graphData({
+            nodes: JSON.parse(JSON.stringify(allNodes)),
+            links: JSON.parse(JSON.stringify(displayLinks)),
+        });
     }
 }
 
@@ -1312,14 +1436,17 @@ async function submitStructuredImport() {
         rows: _structuredRows
     };
 
+    const _fileRef = _structuredFile;
     closeColumnMapper();
     show('Importing structured data...');
 
     try {
+        const formData = new FormData();
+        formData.append('file', _fileRef);
+        formData.append('payload', JSON.stringify(payload));
         const resp = await fetch('/api/upload-structured', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: formData,
         });
         const d = await resp.json();
         if (d.success) {
@@ -1421,10 +1548,11 @@ function showErrors(errs){const c=document.getElementById('errorContainer');c.in
 // ===== UNDO / DELETE =====
 function _toVisNode(n){
     const t=_themeColors();
-    const img=_generateNodeIcon(n.type, n.color, n.size);
+    const dc = _getNodeDisplayColor(n);
+    const img=_generateNodeIcon(n.type, dc, n.size);
     return{id:n.id,label:'',shape:'circularImage',image:img,size:n.size,
         borderWidth:2,borderWidthSelected:3,
-        color:{border:n.color,highlight:{border:currentTheme==='light'?'#333':'#fff'},hover:{border:n.color}},
+        color:{border:dc,highlight:{border:currentTheme==='light'?'#333':'#fff'},hover:{border:dc}},
         font:{size:1,color:'transparent'},
         title:`${n.name} (${n.type})${n.confidenceScore?' | Confidence: '+n.confidenceScore+'/10':''}`,
         data:n};
@@ -1432,13 +1560,15 @@ function _toVisNode(n){
 function _toVisEdge(l, smoothOverride){
     const t=_themeColors();
     const _darkRedMap={'#E74C3C':'#A13529','#E55B5B':'#A03F3F','#D94040':'#982D2D','#C0392B':'#86281E'};
-    const ec = (currentTheme==='dark' && _darkRedMap[l.color]) ? _darkRedMap[l.color] : l.color;
+    const baseColor = (currentTheme==='dark' && _darkRedMap[l.color]) ? _darkRedMap[l.color] : l.color;
+    const ec = _getEdgeDisplayColor({...l, color: baseColor});
+    const dd = _getEdgeDashes(l);
     return{id:l.id,from:l.from,to:l.to,
-        label:'', // We draw labels ourselves for precise centering
+        label:'',
         color:{color:ec,highlight:ec,hover:ec,opacity:l.opacity||0.75},
-        width:l.width,dashes:l.dashes,
+        width:l.width,dashes:dd,
         arrows:{to:{enabled:true,scaleFactor:0.8}},
-        font:{size:0}, // Hide vis.js label
+        font:{size:0},
         smooth:smoothOverride || _getEdgeSmooth(),data:l};
 }
 function _applyGraphDiff(newGraph){
@@ -1718,17 +1848,18 @@ function _buildLayoutNetwork(layout) {
     },1200);
     let _selectedEdgeBaseIds = new Set();
     function _applyEdgeSelection() {
-        // Glow selected, restore unselected -- NO net.setSelection() (it triggers selectNode/deselectNode events that fight us)
         _updateEdgesWithSegments(eds, l => {
+            const dc = _getEdgeDisplayColor(l);
+            const dd = _getEdgeDashes(l);
             if (_selectedEdgeBaseIds.has(l.id)) {
-                return {color:{color:l.color,highlight:l.color},width:l.width*2.5,shadow:{enabled:true,color:l.color,size:12}};
+                return {color:{color:dc,highlight:dc},width:l.width*2.5,dashes:dd,shadow:{enabled:true,color:dc,size:12}};
             }
-            return {color:{color:l.color,highlight:l.color},width:l.width,shadow:{enabled:false}};
+            return {color:{color:dc,highlight:dc},width:l.width,dashes:dd,shadow:{enabled:false}};
         });
     }
     function _clearEdgeSelection() {
         _selectedEdgeBaseIds = new Set();
-        _updateEdgesWithSegments(eds, l => ({color:{color:l.color,highlight:l.color},width:l.width,shadow:{enabled:false}}));
+        _updateEdgesWithSegments(eds, l => {const dc=_getEdgeDisplayColor(l);return{color:{color:dc,highlight:dc},width:l.width,dashes:_getEdgeDashes(l),shadow:{enabled:false}};});
     }
     window._clearEdgeSelectionGlobal = () => { _selectedEdgeBaseIds = new Set(); };
     net.on('click',p=>{
@@ -1753,6 +1884,11 @@ function _buildLayoutNetwork(layout) {
             const nd=lds.get(clickedNodeId);
             if(connectMode){handleConnectClick(nd.data);return;}
             _clearEdgeSelection();
+            const isShift = p.event && p.event.srcEvent && p.event.srcEvent.shiftKey;
+            if (isShift && currentSelectedNode && currentSelectedNode.id !== nd.data.id) {
+                openMergeModal(currentSelectedNode, nd.data);
+                return;
+            }
             selectNode(nd.data);
         } else if(p.edges.length){
             const isCtrl = p.event && (p.event.srcEvent?.ctrlKey || p.event.srcEvent?.metaKey);
@@ -1788,9 +1924,10 @@ function _buildLayoutNetwork(layout) {
     }
     function _glowEdge(l) {
         const allDsIds = eds.getIds();
-        const updates = [{id:l.id, width:l.width*2, shadow:{enabled:true, color:l.color, size:10, x:0, y:0}}];
+        const dc = _getEdgeDisplayColor(l);
+        const updates = [{id:l.id, width:l.width*2, shadow:{enabled:true, color:dc, size:10, x:0, y:0}}];
         const prefix = l.id + '_seg';
-        allDsIds.forEach(sid => { if (sid.startsWith(prefix)) updates.push({id:sid, width:l.width*2, shadow:{enabled:true, color:l.color, size:10, x:0, y:0}}); });
+        allDsIds.forEach(sid => { if (sid.startsWith(prefix)) updates.push({id:sid, width:l.width*2, shadow:{enabled:true, color:dc, size:10, x:0, y:0}}); });
         eds.update(updates);
     }
     const _wpIdSet = () => new Set(_waypoints.map(w=>w.id));
@@ -2060,12 +2197,18 @@ async function _computeElkLayout(direction) {
         if (!srcPos || !tgtPos) return;
         const dy = tgtPos.y - srcPos.y, dx = tgtPos.x - srcPos.x;
         let srcSide, tgtSide;
-        if (Math.abs(dy) > Math.abs(dx) * 0.15) {
-            // Primarily vertical relationship (bias toward N/S in DOWN layout)
+        
+        // Determine port sides based on the dominant direction
+        // In DOWN layout, most edges flow vertically (dy dominates)
+        // In RIGHT layout, most edges flow horizontally (dx dominates)
+        const isVerticalDominant = Math.abs(dy) > Math.abs(dx) * 0.5;
+        
+        if (isVerticalDominant) {
+            // Primarily vertical flow
             if (dy > 0) { srcSide = 'SOUTH'; tgtSide = 'NORTH'; }
             else { srcSide = 'NORTH'; tgtSide = 'SOUTH'; }
         } else {
-            // Primarily horizontal / same-layer
+            // Primarily horizontal flow or same-layer
             if (dx > 0) { srcSide = 'EAST'; tgtSide = 'WEST'; }
             else { srcSide = 'WEST'; tgtSide = 'EAST'; }
         }
@@ -2252,16 +2395,24 @@ function render3D() {
     if(!graph3d){
         graph3d=ForceGraph3D({controlType:'orbit',extraRenderers:[],rendererConfig:{antialias:true,preserveDrawingBuffer:true}})(container)
             .backgroundColor('#0d0d0d').showNavInfo(false)
-            .nodeThreeObject(n=>create3DNode(n))
+            .nodeThreeObject(n => {
+                const dc = _getNodeDisplayColor(n);
+                return create3DNode({ ...n, color: dc });
+            })
             .nodeLabel(n=>`<div style="background:#1a1a1a;border:1px solid #333;padding:5px 8px;border-radius:3px;font-size:10px;color:#ccc;font-family:Inter"><b>${n.name}</b><br><span style="color:#555">${n.type} | ${n.confidence}</span></div>`)
             .linkThreeObjectExtend(true).linkThreeObject(l=>make3DLinkLabel(l))
             .linkPositionUpdate((sprite,{start,end})=>{Object.assign(sprite.position,{x:(start.x+end.x)/2,y:(start.y+end.y)/2+2,z:(start.z+end.z)/2});})
-            .linkColor(l=>l.color).linkWidth(l=>l.width*0.5)
-            .linkDirectionalParticles(l=>l.particles||0).linkDirectionalParticleWidth(1.5).linkDirectionalParticleSpeed(0.004).linkDirectionalParticleColor(l=>l.color)
-            .linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).linkDirectionalArrowColor(l=>l.color)
+            .linkColor(l=>_getEdgeDisplayColor(l)).linkWidth(l=>l.width*0.5)
+            .linkDirectionalParticles(l=>l.particles||0).linkDirectionalParticleWidth(1.5).linkDirectionalParticleSpeed(0.004).linkDirectionalParticleColor(l=>_getEdgeDisplayColor(l))
+            .linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).linkDirectionalArrowColor(l=>_getEdgeDisplayColor(l))
             .linkCurvature(edgeRoutingMode==='straight'?0:0.12).linkOpacity(0.55)
-            .onNodeClick(n=>{
+            .onNodeClick((n, event)=>{
                 if(connectMode){handleConnectClick(n);return;}
+                // Shift+click on a different node -> open merge modal
+                if (event && event.shiftKey && currentSelectedNode && currentSelectedNode.id !== n.id) {
+                    openMergeModal(currentSelectedNode, n);
+                    return;
+                }
                 // Click-to-select, click-again-to-zoom
                 if(currentSelectedNode&&currentSelectedNode.id===n.id){
                     smoothFlyTo3D(n);
@@ -2508,7 +2659,8 @@ function highlightConnection(nodeId, linkColor, edgeId) {
         network._nodesDS.update(allNodes.map(n=>({id:n.id,opacity:highlightSet.has(n.id)?1.0:0.10})));
         _updateEdgesWithSegments(network._edgesDS, l => {
             const isTarget = (l.from===sel&&l.to===nodeId)||(l.to===sel&&l.from===nodeId);
-            return {color:{color:isTarget?l.color:l.color+'15',highlight:l.color},width:isTarget?l.width*1.8:l.width*0.3,shadow:{enabled:false}};
+            const dc = _getEdgeDisplayColor(l);
+            return {color:{color:isTarget?dc:dc+'15',highlight:dc},width:isTarget?l.width*1.8:l.width*0.3,shadow:{enabled:false}};
         });
     }
     if (currentView==='3d'&&graph3d) {
@@ -2540,7 +2692,8 @@ function highlightConnection(nodeId, linkColor, edgeId) {
                 const src=typeof l.source==='object'?l.source.id:l.source;
                 const tgt=typeof l.target==='object'?l.target.id:l.target;
                 const isRelevant=(src===sel&&tgt===nodeId)||(tgt===sel&&src===nodeId);
-                return isRelevant ? l.color : l.color+'12';
+                const dc = _getEdgeDisplayColor(l);
+                return isRelevant ? dc : dc+'12';
             })
             .linkOpacity(l=>{
                 const src=typeof l.source==='object'?l.source.id:l.source;
@@ -2583,7 +2736,7 @@ function unhighlightConnection() {
                 return{id:n.id,opacity:op};
             }));
             const isDirectEdge=l=>l.from===node.id||l.to===node.id;
-            _updateEdgesWithSegments(network._edgesDS, l => ({color:{color:isDirectEdge(l)?l.color:l.color+'33',highlight:l.color},width:isDirectEdge(l)?l.width:l.width*0.5,shadow:{enabled:false}}));
+            _updateEdgesWithSegments(network._edgesDS, l => {const dc=_getEdgeDisplayColor(l);return{color:{color:isDirectEdge(l)?dc:dc+'33',highlight:dc},width:isDirectEdge(l)?l.width:l.width*0.5,shadow:{enabled:false}};});
         }
     }
 }
@@ -2604,11 +2757,14 @@ function _highlightClickedEdge(link) {
     if (!link || currentView!=='2d' || !network || !nodesDS || !edgesDS) return;
     currentSelectedNode = null;
     nodesDS.update(allNodes.map(n => ({id:n.id, opacity:(n.id===link.from||n.id===link.to)?1.0:0.15})));
-    _updateEdgesWithSegments(edgesDS, l => ({
-        color:{color:l.id===link.id?l.color:l.color+'15',highlight:l.color},
-        width:l.id===link.id?l.width*2:l.width*0.3,
-        shadow:l.id===link.id?{enabled:true,color:l.color,size:10}:{enabled:false}
-    }));
+    _updateEdgesWithSegments(edgesDS, l => {
+        const dc = _getEdgeDisplayColor(l);
+        return {
+            color:{color:l.id===link.id?dc:dc+'15',highlight:dc},
+            width:l.id===link.id?l.width*2:l.width*0.3,
+            shadow:l.id===link.id?{enabled:true,color:dc,size:10}:{enabled:false}
+        };
+    });
 }
 
 // ===== REVIEW CARD HOVER HIGHLIGHT =====
@@ -2616,17 +2772,20 @@ function _reviewCardHover(itemId, kind) {
     if (currentView!=='2d' || !network || !nodesDS || !edgesDS) return;
     if (kind === 'relationship' || itemId.startsWith('edge_')) {
         const link = allLinks.find(l => l.id === itemId);
-        if (link) highlightConnection(link.to, link.color, link.id);
+        if (link) highlightConnection(link.to, _getEdgeDisplayColor(link), link.id);
     } else {
         const node = allNodes.find(n => n.id === itemId);
         if (!node) return;
         _hoverHighlightActive = true;
         nodesDS.update(allNodes.map(n => ({id:n.id, opacity: n.id===itemId ? 1.0 : 0.10})));
-        _updateEdgesWithSegments(edgesDS, l => ({
-            color:{color:(l.from===itemId||l.to===itemId)?l.color:l.color+'15',highlight:l.color},
-            width:(l.from===itemId||l.to===itemId)?l.width*1.8:l.width*0.3,
-            shadow:{enabled:false}
-        }));
+        _updateEdgesWithSegments(edgesDS, l => {
+            const dc = _getEdgeDisplayColor(l);
+            return {
+                color:{color:(l.from===itemId||l.to===itemId)?dc:dc+'15',highlight:dc},
+                width:(l.from===itemId||l.to===itemId)?l.width*1.8:l.width*0.3,
+                shadow:{enabled:false}
+            };
+        });
     }
 }
 function _reviewCardUnhover() { unhighlightConnection(); }
@@ -2762,6 +2921,14 @@ function _showNodeDetailPanel(node) {
         <div class="detail-field"><div class="field-label">Type</div>
             <select id="nodeEditType" style="width:100%;background:var(--t-input);border:1px solid var(--t-border);border-radius:3px;color:var(--t-text);font-size:12px;padding:5px;font-family:inherit">${typeOpts}</select>
         </div>
+        <div class="detail-field" style="margin-top:10px">
+            <div class="field-label">Custom Color</div>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap">
+                ${['#FF5555','#55FF55','#5555FF','#FFAA00','#AA00FF','#00AAFF','#FF55AA','#55FFAA'].map(c => `<div style="width:20px;height:20px;border-radius:4px;background:${c};cursor:pointer;border:2px solid ${(props.colorOverride===c)?'#fff':'var(--t-border)'}" onclick="_pickNodeColor('${node.id}', '${c}')"></div>`).join('')}
+                <input type="color" id="nodeColorPicker" value="${props.colorOverride || node.color}" style="width:30px;height:24px;border:1px solid var(--t-border);border-radius:3px;cursor:pointer;background:var(--t-input)" onchange="_pickNodeColor('${node.id}', this.value)" title="Pick custom color">
+                <button onclick="_pickNodeColor('${node.id}', null)" style="background:none;border:1px solid var(--t-border);border-radius:3px;font-size:9px;padding:2px 6px;color:var(--t-muted);cursor:pointer" title="Reset to type color">Reset</button>
+            </div>
+        </div>
         <div style="border-top:1px solid var(--t-border);margin:8px 0"></div>
         <div class="detail-field"><div class="field-label">AI Confidence <span style="color:var(--t-faint);font-weight:400;text-transform:none;font-size:10px">(estimated)</span></div>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
@@ -2788,6 +2955,7 @@ function _showNodeDetailPanel(node) {
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
             <button class="action-btn" id="nodeSaveBtn" onclick="saveNodeAll('${node.id}')" style="min-width:80px;transition:background 0.3s,color 0.3s;border-color:#3a5;color:#7d7">Save</button>
+            <button class="action-btn" onclick="_startMergeWith(currentSelectedNode)" style="border-color:#4a7;color:#7bc" title="Merge this node with another">Merge...</button>
             <button class="action-btn danger" onclick="deleteNode('${node.id}')">Delete Node</button>
         </div>`;
 }
@@ -2801,7 +2969,7 @@ function showNodeDetail(node) {
             return{id:n.id,opacity:op};
         }));
         const isDirectEdge=l=>l.from===node.id||l.to===node.id;
-        network._edgesDS.update(allLinks.map(l=>({id:l.id,color:{color:isDirectEdge(l)?l.color:l.color+'33',highlight:l.color},width:isDirectEdge(l)?l.width:l.width*0.5})));
+        network._edgesDS.update(allLinks.map(l=>{const dc=_getEdgeDisplayColor(l);return{id:l.id,color:{color:isDirectEdge(l)?dc:dc+'33',highlight:dc},width:isDirectEdge(l)?l.width:l.width*0.5};}));
     }
 }
 
@@ -2849,6 +3017,48 @@ function _collectProps() {
     return props;
 }
 
+function _pickNodeColor(nodeId, colorValue) {
+    const node = allNodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    if (colorValue === null || colorValue === 'null') {
+        if (node.properties) delete node.properties.colorOverride;
+        node.color = _TYPE_DEFAULT_COLORS[node.type] || '#5B8DEF';
+    } else {
+        if (!node.properties) node.properties = {};
+        node.properties.colorOverride = colorValue;
+        node.color = colorValue;
+    }
+    
+    const displayColor = _getNodeDisplayColor(node);
+    
+    if (currentView === '2d' && nodesDS) {
+        const img = _generateNodeIcon(node.type, displayColor, node.size);
+        nodesDS.update({
+            id: node.id,
+            image: img,
+            color: {
+                border: displayColor,
+                highlight: { border: currentTheme === 'light' ? '#333' : '#fff' },
+                hover: { border: displayColor },
+            },
+        });
+        if (network) network.redraw();
+    } else if (currentView === '3d' && graph3d) {
+        graph3d.nodeThreeObject(n => {
+            if (n.id === nodeId) {
+                return create3DNode({ ...n, color: displayColor });
+            }
+            const dc = _getNodeDisplayColor(n);
+            return create3DNode({ ...n, color: dc });
+        });
+        graph3d.graphData({
+            nodes: JSON.parse(JSON.stringify(allNodes)),
+            links: JSON.parse(JSON.stringify(allLinks)),
+        });
+    }
+}
+
 async function saveNodeAll(entityId) {
     const fields = {};
     const nameEl = document.getElementById('nodeEditName');
@@ -2857,8 +3067,14 @@ async function saveNodeAll(entityId) {
     if (nameEl) fields.name = nameEl.value.trim();
     if (typeEl) fields.type = typeEl.value;
     if (evidEl) fields.evidence = evidEl.value.trim();
-    fields.properties = _collectProps();
+    
     const node = allNodes.find(n => n.id === entityId);
+    const collectedProps = _collectProps();
+    if (node && node.properties && node.properties.colorOverride) {
+        collectedProps.colorOverride = node.properties.colorOverride;
+    }
+    fields.properties = collectedProps;
+    
     if (node) { Object.assign(node, {name: fields.name, type: fields.type, evidence: fields.evidence, allEvidence: [fields.evidence], properties: fields.properties}); }
     const btn = document.getElementById('nodeSaveBtn');
     if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
@@ -2940,7 +3156,7 @@ function showLinkDetail(link){
         </div>`;
 }
 
-function closeDetail(){document.getElementById('navBar').style.display='none';document.getElementById('emptyDetail').style.display='flex';document.getElementById('detailContent').style.display='none';currentSelectedNode=null;if(window._clearEdgeSelectionGlobal) window._clearEdgeSelectionGlobal();if(currentView==='2d'&&network&&network._nodesDS&&network._edgesDS){network._nodesDS.update(allNodes.map(n=>({id:n.id,opacity:1.0})));_updateEdgesWithSegments(network._edgesDS, l=>({color:{color:l.color,highlight:l.color},width:l.width,shadow:{enabled:false}}));}deselect3DNode();if(currentView==='3d'&&graph3d){const c=getGraphCentroid();const ctrl=graph3d.controls();if(ctrl&&ctrl.target){ctrl.target.set(c.x,c.y,c.z);ctrl.update();}}}
+function closeDetail(){document.getElementById('navBar').style.display='none';document.getElementById('emptyDetail').style.display='flex';document.getElementById('detailContent').style.display='none';currentSelectedNode=null;if(window._clearEdgeSelectionGlobal) window._clearEdgeSelectionGlobal();if(currentView==='2d'&&network&&network._nodesDS&&network._edgesDS){network._nodesDS.update(allNodes.map(n=>({id:n.id,opacity:1.0})));_updateEdgesWithSegments(network._edgesDS, l=>{const dc=_getEdgeDisplayColor(l);return{color:{color:dc,highlight:dc},width:l.width,shadow:{enabled:false}};});}deselect3DNode();if(currentView==='3d'&&graph3d){const c=getGraphCentroid();const ctrl=graph3d.controls();if(ctrl&&ctrl.target){ctrl.target.set(c.x,c.y,c.z);ctrl.update();}}}
 
 // ===== CONNECTIONS =====
 function _updateEdge(id, prop, value) {
@@ -3007,6 +3223,159 @@ function _buildNodeTypePicker(){
 }
 function closeNodeModal(){document.getElementById('nodeModal').classList.remove('open');}
 async function submitNode(){const name=document.getElementById('nodeName').value.trim();if(!name){alert('Name is required');return;}const ntype=document.getElementById('nodeType').value;const propsRaw=document.getElementById('nodeProps').value.trim();const props={};if(propsRaw)propsRaw.split(',').forEach(p=>{const[k,v]=p.split(':').map(s=>s.trim());if(k&&v)props[k]=v;});closeNodeModal();try{const d=await(await fetch('/api/node/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,type:ntype,properties:props,project_id:PROJECT_ID})})).json();if(d.success){loadGraphData(d.graph);updateStats(d.entity_count,d.relationship_count);}}catch(e){alert(e.message);}}
+
+// ═══════════════════════════════════════════════════════════
+// MANUAL NODE MERGE
+// ═══════════════════════════════════════════════════════════
+function _esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+let _mergeTarget = null, _mergeSource = null;
+
+function openMergeModal(targetNode, sourceNode) {
+    _mergeTarget = targetNode;
+    _mergeSource = sourceNode;
+    _renderMergePreviews();
+    document.getElementById('mergeModal').classList.add('open');
+}
+
+function closeMergeModal() {
+    document.getElementById('mergeModal').classList.remove('open');
+    _mergeTarget = null;
+    _mergeSource = null;
+}
+
+function _renderMergePreviews() {
+    const t = _mergeTarget, s = _mergeSource;
+    document.getElementById('mergeTargetPreview').innerHTML =
+        `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color};margin-right:6px;vertical-align:middle"></span><strong>${_esc(t.name)}</strong> <span style="color:var(--t-muted);font-size:10px">(${_esc(t.type)})</span>`;
+    document.getElementById('mergeSourcePreview').innerHTML =
+        `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${s.color};margin-right:6px;vertical-align:middle"></span><strong>${_esc(s.name)}</strong> <span style="color:var(--t-muted);font-size:10px">(${_esc(s.type)})</span>`;
+}
+
+function _swapMergeDirection() {
+    const tmp = _mergeTarget;
+    _mergeTarget = _mergeSource;
+    _mergeSource = tmp;
+    _renderMergePreviews();
+}
+
+async function submitMerge() {
+    if (!_mergeTarget || !_mergeSource) return;
+    const btn = document.getElementById('mergeConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Merging...';
+    try {
+        const res = await fetch('/api/graph/merge', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                project_id: PROJECT_ID,
+                target_id: _mergeTarget.id,
+                source_id: _mergeSource.id,
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const tName = _mergeTarget.name, sName = _mergeSource.name;
+            closeMergeModal();
+            loadGraphData(data.graph);
+            updateStats(data.entity_count, data.relationship_count);
+            _showMergeToast(`Merged \u201c${sName}\u201d into \u201c${tName}\u201d`);
+        } else {
+            alert(data.detail || 'Merge failed');
+        }
+    } catch (e) { alert('Merge failed: ' + e.message); }
+    finally { btn.disabled = false; btn.textContent = 'Merge'; }
+}
+
+function _showMergeToast(msg) {
+    let t = document.getElementById('mergeToast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'mergeToast';
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--t-input,#1a1a1a);border:1px solid var(--t-border,#333);color:var(--t-text,#ccc);padding:8px 18px;border-radius:5px;font-size:12px;font-family:inherit;z-index:9999;pointer-events:none;transition:opacity 0.4s;opacity:0';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+}
+
+function _showNodeContextMenu(x, y, node) {
+    let menu = document.getElementById('nodeCtxMenu');
+    if (!menu) {
+        menu = document.createElement('div');
+        menu.id = 'nodeCtxMenu';
+        menu.style.cssText = 'position:fixed;z-index:30;background:var(--t-input,#1a1a1a);border:1px solid var(--t-border,#333);border-radius:4px;padding:2px;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:none;min-width:180px';
+        document.body.appendChild(menu);
+    }
+    let items = '';
+    if (currentSelectedNode && currentSelectedNode.id !== node.id) {
+        const sel = currentSelectedNode;
+        items += `<button style="width:100%;font-size:10px;padding:6px 12px;border:none;background:none;color:var(--t-text,#ccc);cursor:pointer;text-align:left;white-space:nowrap;font-family:inherit"
+            onmouseenter="this.style.background='var(--t-border,#333)'" onmouseleave="this.style.background='none'"
+            onclick="document.getElementById('nodeCtxMenu').style.display='none'; openMergeModal(window._ctxMenuOther, window._ctxMenuNode)">
+            Merge &ldquo;${_esc(node.name)}&rdquo; into &ldquo;${_esc(sel.name)}&rdquo;</button>`;
+        window._ctxMenuOther = sel;
+    }
+    items += `<button style="width:100%;font-size:10px;padding:6px 12px;border:none;background:none;color:var(--t-text,#ccc);cursor:pointer;text-align:left;white-space:nowrap;font-family:inherit"
+        onmouseenter="this.style.background='var(--t-border,#333)'" onmouseleave="this.style.background='none'"
+        onclick="document.getElementById('nodeCtxMenu').style.display='none'; _startMergeWith(window._ctxMenuNode)">
+        Merge with&hellip;</button>`;
+    window._ctxMenuNode = node;
+    menu.innerHTML = items;
+    menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
+    setTimeout(() => document.addEventListener('click', function _closeCtx() {
+        menu.style.display = 'none'; document.removeEventListener('click', _closeCtx);
+    }), 50);
+}
+
+function _startMergeWith(sourceNode) {
+    const others = allNodes.filter(n => n.id !== sourceNode.id);
+    if (!others.length) { alert('No other nodes to merge with.'); return; }
+
+    let picker = document.getElementById('mergePickerOverlay');
+    if (picker) picker.remove();
+
+    picker = document.createElement('div');
+    picker.id = 'mergePickerOverlay';
+    picker.className = 'modal-overlay';
+    picker.innerHTML = `<div class="modal" style="position:relative;max-height:70vh;display:flex;flex-direction:column;gap:0">
+        <button onclick="document.getElementById('mergePickerOverlay').classList.remove('open')" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--t-muted);cursor:pointer;font-size:18px;padding:0">&times;</button>
+        <h3 style="margin-bottom:12px">Merge &ldquo;${_esc(sourceNode.name)}&rdquo; into&hellip;</h3>
+        <input type="text" id="mergePickerSearch" placeholder="Search nodes\u2026" style="margin-bottom:8px;padding:7px 10px;background:var(--t-input);border:1px solid var(--t-border);border-radius:4px;color:var(--t-text);font-size:12px;font-family:inherit;box-sizing:border-box">
+        <div id="mergePickerList" style="overflow-y:auto;flex:1;min-height:0"></div>
+    </div>`;
+    document.body.appendChild(picker);
+
+    const listEl = document.getElementById('mergePickerList');
+    window._mergePickerSource = sourceNode;
+
+    function renderList(filter) {
+        const q = (filter || '').toLowerCase();
+        const filtered = others.filter(n => !q || n.name.toLowerCase().includes(q));
+        if (!filtered.length) {
+            listEl.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--t-muted);text-align:center">No matching nodes</div>';
+            return;
+        }
+        listEl.innerHTML = filtered.slice(0, 80).map(n => {
+            const sid = n.id.replace(/'/g, "\\'");
+            return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-radius:3px;transition:background 0.1s"
+                onmouseenter="this.style.background='var(--t-input)'" onmouseleave="this.style.background='transparent'"
+                onclick="document.getElementById('mergePickerOverlay').classList.remove('open'); openMergeModal(allNodes.find(x=>x.id==='${sid}'), window._mergePickerSource)">
+                <span style="width:8px;height:8px;border-radius:50%;background:${n.color};flex-shrink:0"></span>
+                <span style="flex:1;font-size:12px;color:var(--t-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(n.name)}</span>
+                <span style="font-size:9px;color:var(--t-muted);flex-shrink:0">${_esc(n.type)}</span>
+            </div>`;
+        }).join('');
+    }
+
+    renderList('');
+    const searchEl = document.getElementById('mergePickerSearch');
+    searchEl.oninput = () => renderList(searchEl.value);
+    picker.classList.add('open');
+    setTimeout(() => searchEl.focus(), 80);
+}
 
 // ═══════════════════════════════════════════════════════════
 // ANNOTATIONS (free-floating DOM boxes with title, color, opacity)
@@ -3430,11 +3799,12 @@ function _setupGroupCanvasRenderer(){
         try {
             const points = _buildEdgePath(hl);
             if (points.length < 2) return;
+            const _hlEC = _getEdgeDisplayColor(hl);
             ctx.save();
-            ctx.strokeStyle = currentTheme === 'light' ? (hl.color || '#333') : '#fff';
+            ctx.strokeStyle = currentTheme === 'light' ? (_hlEC || '#333') : '#fff';
             ctx.globalAlpha = currentTheme === 'light' ? 0.3 : 0.35;
             ctx.lineWidth = (hl.width || 1) * 5;
-            ctx.shadowColor = hl.color || '#fff';
+            ctx.shadowColor = _hlEC || '#fff';
             ctx.shadowBlur = 12;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -3851,8 +4221,10 @@ function _restoreWaypoints(savedWps) {
         // Remove original edge and build segment chain: from → wp0 → wp1 → ... → to
         edgesDS.remove(origEdgeId);
         const origData = origEdge.data || {};
+        const _segDC = origEdge.data ? _getEdgeDisplayColor(origEdge.data) : (origEdge.color?.color || origEdge.color || '#888');
+        const _segDD = origEdge.data ? _getEdgeDashes(origEdge.data) : (origEdge.dashes || false);
         const baseStyle = {
-            color: origEdge.color, width: origEdge.width || 1, dashes: origEdge.dashes || false,
+            color: _segDC, width: origEdge.width || 1, dashes: _segDD,
             font: {size:0}, smooth: {type:'continuous', roundness:0},
         };
         const chainIds = [origEdge.from, ...wps.map(w => w.id), origEdge.to];
@@ -3892,6 +4264,13 @@ function _handleCanvasContextMenu(e) {
         if (wp) {
             e.preventDefault();
             _showJointMenu(e.clientX, e.clientY, 'remove', wp);
+            return;
+        }
+        // Real node -> offer merge (and any future node context actions)
+        const realNode = allNodes.find(n => n.id === nodeAt);
+        if (realNode) {
+            e.preventDefault();
+            _showNodeContextMenu(e.clientX, e.clientY, realNode);
             return;
         }
     }
@@ -3962,8 +4341,10 @@ function _addJointAtEdge(edgeId, domPos) {
     const e2Id = edgeId + '_b';
 
     edgesDS.remove(edgeId);
+    const _wpDC = edge.data ? _getEdgeDisplayColor(edge.data) : (edge.color?.color || edge.color || '#888');
+    const _wpDD = edge.data ? _getEdgeDashes(edge.data) : (edge.dashes || false);
     const baseStyle = {
-        color: edge.color, width: edge.width || 1, dashes: edge.dashes || false,
+        color: _wpDC, width: edge.width || 1, dashes: _wpDD,
         font: edge.font || {size:11}, smooth: {type:'continuous', roundness:0},
     };
     edgesDS.add({ id: e1Id, from: edge.from, to: wpId, label: edge.label || '',
@@ -4039,9 +4420,11 @@ function undoJoint() {
         const siblings = action.siblings || [action.wp];
         const wp = action.wp;
         if (wp.origEdge) { try { edgesDS.remove(wp.origEdgeId); } catch(e){} }
+        const _undoDC = wp.origEdge?.data ? _getEdgeDisplayColor(wp.origEdge.data) : (wp.origEdge?.color?.color || wp.origEdge?.color || '#888');
+        const _undoDD = wp.origEdge?.data ? _getEdgeDashes(wp.origEdge.data) : (wp.origEdge?.dashes || false);
         const baseStyle = {
-            color: wp.origEdge?.color || {color:'#888'}, width: wp.origEdge?.width || 1,
-            dashes: wp.origEdge?.dashes || false, smooth: {type:'continuous', roundness:0},
+            color: _undoDC, width: wp.origEdge?.width || 1,
+            dashes: _undoDD, smooth: {type:'continuous', roundness:0},
         };
         siblings.forEach(s => {
             nodesDS.add({ id: s.id, label: '', shape: 'dot', size: 3,
@@ -4479,9 +4862,9 @@ function _computeOrthoPaths(ctx){
         try{ fromPos=network.getPosition(edge.from); toPos=network.getPosition(edge.to); }catch(e){ return; }
         if(!fromPos||!toPos) return;
 
-        const color = edge.color?.color || edge.data?.color || '#555';
+        const color = edge.data ? _getEdgeDisplayColor(edge.data) : (edge.color?.color || '#555');
         const width = edge.width || 1;
-        const dashes = edge.dashes || false;
+        const dashes = edge.data ? _getEdgeDashes(edge.data) : (edge.dashes || false);
         const label = edge.label || '';
 
         // Get or compute path
@@ -4858,13 +5241,13 @@ function filterGraph(){
             const edgeMatch=!et||l.type===et;
             const visible=nodeMatch&&edgeMatch;
             const glow=et&&edgeMatch;
-            const style={color:{color:visible?l.color:l.color+'18',highlight:l.color},width:visible?(glow?l.width*1.5:l.width):l.width*0.4,shadow:glow?{enabled:true,color:l.color,size:10}:{enabled:false},hidden:false};
+            const dc=_getEdgeDisplayColor(l);const dd=_getEdgeDashes(l);const style={color:{color:visible?dc:dc+'18',highlight:dc},width:visible?(glow?l.width*1.5:l.width):l.width*0.4,dashes:dd,shadow:glow?{enabled:true,color:dc,size:10}:{enabled:false},hidden:false};
             (origToVis[l.id]||[]).forEach(eid=>{es.update({id:eid,...style});});
         });
     } else if(graph3d){
         const matchNodeIds=nt?new Set(allNodes.filter(n=>n.type===nt).map(n=>n.id)):null;
         graph3d.nodeThreeObject(n=>{const dim=matchNodeIds&&!matchNodeIds.has(n.id);return create3DNode(n,dim?0.12:0.9);})
-        .linkOpacity(0.55).linkColor(l=>{const nm=!matchNodeIds||matchNodeIds.has(l.from)||matchNodeIds.has(l.to);const em=!et||l.type===et;return(nm&&em)?l.color:l.color+'30';})
+        .linkOpacity(0.55).linkColor(l=>{const nm=!matchNodeIds||matchNodeIds.has(l.from)||matchNodeIds.has(l.to);const em=!et||l.type===et;const dc=_getEdgeDisplayColor(l);return(nm&&em)?dc:dc+'30';})
         .linkWidth(l=>{const nm=!matchNodeIds||matchNodeIds.has(l.from)||matchNodeIds.has(l.to);const em=!et||l.type===et;const glow=et&&em;return(nm&&em)?(glow?l.width*0.8:l.width*0.5):l.width*0.2;})
         .linkDirectionalParticles(l=>{const nm=!matchNodeIds||matchNodeIds.has(l.from)||matchNodeIds.has(l.to);const em=!et||l.type===et;return(et&&nm&&em)?Math.max(l.particles||0,3):(l.particles||0);});
         graph3d.graphData({nodes:JSON.parse(JSON.stringify(allNodes)),links:JSON.parse(JSON.stringify(allLinks))});
@@ -5160,7 +5543,7 @@ function _clearPathHighlight() {
             color:{background:n.color,border:n.color,highlight:{background:n.color,border:'#fff'}}})));
         const _clrUpdates = [];
         allLinks.forEach(l => {
-            const s = {color:{color:l.color,highlight:l.color}, width:l.width, shadow:{enabled:false}};
+            const dc=_getEdgeDisplayColor(l);const s = {color:{color:dc,highlight:dc}, width:l.width, dashes:_getEdgeDashes(l), shadow:{enabled:false}};
             _clrUpdates.push({id:l.id, ...s});
             edgesDS.getIds().forEach(eid => { if (eid.startsWith(l.id+'_seg')) _clrUpdates.push({id:eid, ...s}); });
         });
@@ -5182,7 +5565,7 @@ function highlightPath(nodeIds, edgeIds) {
         const _pathEdgeUpdates = [];
         allLinks.forEach(l => {
             const on = edgeSet.has(l.id);
-            const style = {color:{color:on?l.color:l.color+'15',highlight:l.color},width:on?l.width*2.5:l.width*0.3,shadow:on?{enabled:true,color:l.color,size:12}:{enabled:false}};
+            const dc=_getEdgeDisplayColor(l);const style = {color:{color:on?dc:dc+'15',highlight:dc},width:on?l.width*2.5:l.width*0.3,dashes:_getEdgeDashes(l),shadow:on?{enabled:true,color:dc,size:12}:{enabled:false}};
             _pathEdgeUpdates.push({id:l.id, ...style});
             edgesDS.getIds().forEach(eid => { if (eid.startsWith(l.id+'_seg')) _pathEdgeUpdates.push({id:eid, ...style}); });
         });
@@ -5510,9 +5893,13 @@ async function loadDocumentList() {
     try {
         const d = await(await fetch(_urlPid('/api/documents'))).json();
         if (!d.documents.length) { container.innerHTML = '<div style="color:#555;padding:8px">No documents uploaded yet. Upload documents in the right sidebar.</div>'; return; }
-        let html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">';
+        const _docIcons = { pdf: '📄', csv: '📊', xlsx: '📊', xls: '📊', txt: '📝', md: '📝', docx: '📋', doc: '📋' };
+        let html = '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:6px 0 8px;border-bottom:1px solid var(--t-border);margin-bottom:8px">';
         d.documents.forEach(doc => {
-            html += `<button class="tool-btn" onclick="viewDocument('${doc.name}')" style="font-size:9px">${doc.name}</button>`;
+            const ext = doc.name.split('.').pop().toLowerCase();
+            const icon = _docIcons[ext] || '📎';
+            const unavail = !doc.available ? 'opacity:0.45;' : '';
+            html += `<button class="tool-btn" onclick="viewDocument('${doc.name.replace(/'/g,"\\'")}')" style="font-size:9px;${unavail}" title="${doc.name}">${icon} ${doc.name}</button>`;
         });
         html += '</div><div id="docFrame" style="flex:1;overflow:auto;min-height:0"></div>';
         container.innerHTML = html;
@@ -5531,6 +5918,53 @@ function viewDocument(filename, highlightHint) {
                 frame.innerHTML = `<iframe src="${url}" class="doc-viewer-frame" style="height:100%;min-height:150px"></iframe>`;
             })
             .catch(e => { frame.innerHTML = `<div style="color:#a77">Error loading PDF: ${e.message}</div>`; });
+    } else if (ext === 'csv' || ext === 'xlsx' || ext === 'xls') {
+        frame.innerHTML = `<div style="color:${t.textMuted};padding:8px;font-size:10px">Loading spreadsheet\u2026</div>`;
+        fetch(`/api/document/${encodeURIComponent(filename)}?project_id=${PROJECT_ID}`)
+            .then(r => { if (!r.ok) throw new Error('Not found'); return r.arrayBuffer(); })
+            .then(buf => {
+                const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                if (!rows.length) { frame.innerHTML = '<div style="color:#a77;padding:8px;font-size:11px">Empty file.</div>'; return; }
+                const headers = rows[0] || [];
+                const dataRows = rows.slice(1);
+                const MAX_ROWS = 1000;
+                const truncated = dataRows.length > MAX_ROWS;
+                const displayRows = dataRows.slice(0, MAX_ROWS);
+
+                const thCss = `padding:5px 10px;border:1px solid var(--t-border);font-size:10px;font-weight:600;color:var(--t-text);background:var(--t-input);white-space:nowrap;position:sticky;top:0;z-index:1`;
+                const tdCss = `padding:4px 10px;border:1px solid var(--t-border);font-size:10px;color:var(--t-muted);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis`;
+                const lnCss = `padding:4px 8px;border:1px solid var(--t-border);font-size:9px;color:var(--t-faint);text-align:right;user-select:none;background:var(--t-panel);white-space:nowrap`;
+
+                let html = `<div style="overflow:auto;flex:1;min-height:0;font-family:var(--t-font,Inter,system-ui,sans-serif)">`;
+                const sheetInfo = wb.SheetNames.length > 1
+                    ? `<div style="font-size:9px;color:var(--t-faint);padding:4px 8px 2px">Sheet: <strong style="color:var(--t-muted)">${wb.SheetNames[0]}</strong> (${wb.SheetNames.length} sheets total)</div>`
+                    : '';
+                html += sheetInfo;
+                html += `<table style="border-collapse:collapse;width:max-content;min-width:100%">`;
+                html += `<thead><tr><th style="${lnCss}">#</th>`;
+                headers.forEach(h => { html += `<th style="${thCss}">${String(h == null ? '' : h).replace(/</g,'&lt;')}</th>`; });
+                html += `</tr></thead><tbody>`;
+
+                displayRows.forEach((row, i) => {
+                    const rowBg = i % 2 === 1 ? 'background:rgba(255,255,255,0.02)' : '';
+                    html += `<tr style="${rowBg}"><td style="${lnCss}">${i + 1}</td>`;
+                    headers.forEach((_, ci) => {
+                        const val = row[ci] != null ? String(row[ci]).replace(/</g, '&lt;') : '';
+                        html += `<td style="${tdCss}" title="${val}">${val}</td>`;
+                    });
+                    html += `</tr>`;
+                });
+
+                html += `</tbody></table>`;
+                if (truncated) {
+                    html += `<div style="padding:6px 10px;font-size:10px;color:var(--t-faint);font-style:italic">Showing first ${MAX_ROWS} of ${dataRows.length} rows.</div>`;
+                }
+                html += `</div>`;
+                frame.innerHTML = html;
+            })
+            .catch(e => { frame.innerHTML = `<div style="color:#a77;padding:8px;font-size:11px">Error loading spreadsheet: ${e.message}</div>`; });
     } else {
         fetch(`/api/document/${encodeURIComponent(filename)}?project_id=${PROJECT_ID}`)
             .then(r => { if (!r.ok) throw new Error('Not found'); return r.text(); })
@@ -5668,7 +6102,7 @@ async function exportPDF() {
 
     // --- Arrowhead markers (defs first) ---
     const defs = document.createElementNS(ns, 'defs');
-    const usedColors = new Set(allLinks.map(l=>l.color));
+    const usedColors = new Set(allLinks.map(l=>_getEdgeDisplayColor(l)));
     usedColors.forEach(c => {
         const marker = document.createElementNS(ns, 'marker');
         const cid = c.replace('#','');
@@ -5837,22 +6271,22 @@ async function exportPDF() {
     allLinks.forEach(l => {
         try {
             const fp = network.getPosition(l.from), tp = network.getPosition(l.to);
-            // Check for waypoints (ELK bend points or manual joints)
+            const _svgEC = _getEdgeDisplayColor(l);
+            const _svgED = _getEdgeDashes(l);
             const edgeWps = _waypointsByEdge[l.id] || [];
             const wpPositions = [];
             edgeWps.forEach(w => { try { wpPositions.push(network.getPosition(w.id)); } catch(e){} });
 
             if (wpPositions.length > 0) {
-                // Draw polyline through waypoints: from -> wp0 -> wp1 -> ... -> to
                 const points = [fp, ...wpPositions, tp];
                 let d = `M${points[0].x},${points[0].y}`;
                 for (let i = 1; i < points.length; i++) d += ` L${points[i].x},${points[i].y}`;
                 const path = document.createElementNS(ns, 'path');
                 path.setAttribute('d', d);
-                path.setAttribute('stroke', l.color); path.setAttribute('stroke-width', l.width||1);
+                path.setAttribute('stroke', _svgEC); path.setAttribute('stroke-width', l.width||1);
                 path.setAttribute('fill', 'none'); path.setAttribute('opacity', currentTheme==='light'?'0.8':'1');
-                if (l.dashes) path.setAttribute('stroke-dasharray', '6,3');
-                path.setAttribute('marker-end', 'url(#arrow-'+l.color.replace('#','')+')')
+                if (_svgED) path.setAttribute('stroke-dasharray', '6,3');
+                path.setAttribute('marker-end', 'url(#arrow-'+_svgEC.replace('#','')+')')
                 svg.appendChild(path);
             } else {
                 const sm = smoothMap[l.id];
@@ -5866,19 +6300,19 @@ async function exportPDF() {
                     const cy = my + sign * (dx/dist) * dist * r;
                     const path = document.createElementNS(ns, 'path');
                     path.setAttribute('d', `M${fp.x},${fp.y} Q${cx},${cy} ${tp.x},${tp.y}`);
-                    path.setAttribute('stroke', l.color); path.setAttribute('stroke-width', l.width||1);
+                    path.setAttribute('stroke', _svgEC); path.setAttribute('stroke-width', l.width||1);
                     path.setAttribute('fill', 'none'); path.setAttribute('opacity', currentTheme==='light'?'0.8':'1');
-                    if (l.dashes) path.setAttribute('stroke-dasharray', '6,3');
-                    path.setAttribute('marker-end', 'url(#arrow-'+l.color.replace('#','')+')')
+                    if (_svgED) path.setAttribute('stroke-dasharray', '6,3');
+                    path.setAttribute('marker-end', 'url(#arrow-'+_svgEC.replace('#','')+')')
                     svg.appendChild(path);
                 } else {
                     const line = document.createElementNS(ns, 'line');
                     line.setAttribute('x1', fp.x); line.setAttribute('y1', fp.y);
                     line.setAttribute('x2', tp.x); line.setAttribute('y2', tp.y);
-                    line.setAttribute('stroke', l.color); line.setAttribute('stroke-width', l.width||1);
+                    line.setAttribute('stroke', _svgEC); line.setAttribute('stroke-width', l.width||1);
                     line.setAttribute('opacity', currentTheme==='light'?'0.8':'1');
-                    if (l.dashes) line.setAttribute('stroke-dasharray', '6,3');
-                    line.setAttribute('marker-end', 'url(#arrow-'+l.color.replace('#','')+')')
+                    if (_svgED) line.setAttribute('stroke-dasharray', '6,3');
+                    line.setAttribute('marker-end', 'url(#arrow-'+_svgEC.replace('#','')+')')
                     svg.appendChild(line);
                 }
             }
@@ -6134,7 +6568,7 @@ function _drawParticles(ctx, scale) {
 
             const count = Math.min(l.particles, 2);
             const dotR = Math.max(1.5, 2.5 / scale);
-            ctx.fillStyle = l.color || '#ED5565';
+            ctx.fillStyle = _getEdgeDisplayColor(l) || '#ED5565';
 
             for (let i = 0; i < count; i++) {
                 const offset = i / count;
@@ -6155,7 +6589,7 @@ function _drawParticles(ctx, scale) {
 
                 ctx.globalAlpha = 0.25 + 0.15 * Math.sin(t * Math.PI);
                 ctx.save();
-                ctx.shadowColor = l.color || '#ED5565';
+                ctx.shadowColor = _getEdgeDisplayColor(l) || '#ED5565';
                 ctx.shadowBlur = 6 / scale;
                 ctx.beginPath();
                 ctx.arc(px, py, dotR, 0, Math.PI * 2);
@@ -6369,6 +6803,10 @@ document.addEventListener('keyup', e => {
 
 // ═══ Load saved project graph on page open ═══
 (async function _initProject() {
+    // Initialize UI from localStorage
+    const sel = document.getElementById('edgeStyleSelect');
+    if (sel) sel.value = edgeStyleMode;
+    
     try {
         const res = await fetch(_urlPid('/api/projects/' + PROJECT_ID));
         if (!res.ok) { window.location.href = '/projects'; return; }

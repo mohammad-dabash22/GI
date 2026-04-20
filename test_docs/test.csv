@@ -1,0 +1,21 @@
+From Entity,To Entity,Amount,Date,Reference,From Type,To Type
+Daniel Porter,Harbor Stack GmbH,12500,2024-01-14,INV-HR-014,Person,Organization
+Daniel Porter,Cold Chain Partners LLP,8400,2024-01-22,RETAINER-CC-03,Person,Organization
+Harbor Stack GmbH,Account CH-772211,450000,2024-02-01,POOL-CH-4401,Organization,Account
+Harbor Stack GmbH,Account NL-449902,228000,2024-02-03,POOL-NL-8821,Organization,Account
+Cold Chain Partners LLP,Baltic Ferries NV,310000,2024-02-08,FREIGHT-BLF-118,Organization,Organization
+Baltic Ferries NV,Nordic Ice Transport AS,275000,2024-02-11,COLD-NIT-205,Organization,Organization
+Nordic Ice Transport AS,Red Kite Warehousing,142000,2024-02-15,WH-RKW-992,Organization,Organization
+Red Kite Warehousing,Compliance Escrow Pool,980000,2024-02-19,AGG-ESC-004,Organization,Account
+Daniel Porter,Phone +49 170 9922111,0,2024-01-10,REG-GSM-DE-01,Person,Phone
+Harbor Stack GmbH,Phone +971 55 998 0101,0,2024-02-02,UAE-LNK-TRACE,Organization,Phone
+Harbor Stack (Frankfurt office),Phone +971 55 998 0101,1200,2024-02-04,UAE-LOCAL-FEE,Organization,Phone
+Cold Chain Partners LLP,Address Rotterdam Maashaven 12,7500,2024-02-06,LEASE-DEP-RDM,Organization,Address
+Baltic Ferries NV,Document BL-2024-8891,0,2024-02-09,BOL-COPY-FILE,Organization,Document
+Nordic Ice Transport AS,Customs hold — Hamburg,18500,2024-02-12,DEMURR-HAM-77,Organization,Location
+IR-witness code 7F,Harbor Stack GmbH,0,2024-01-18,WITNESS-MEET-01,Person,Organization
+IR-witness code 7F,Account AE-110044,92000,2024-02-07,WIT-ESCROW-AE,Person,Account
+Account CH-772211,Operations desk — Dubai,310000,2024-02-16,OPS-DXB-ROUT-12,Account,Account
+Account NL-449902,Operations desk — Dubai,198000,2024-02-17,OPS-DXB-ROUT-13,Account,Account
+Account AE-110044,Compliance Escrow Pool,287000,2024-02-18,AGG-ESC-009,Account,Account
+Phone +49 170 9922111,Operations desk — Dubai,0,2024-02-05,COORD-CALL-META,Phone,Account

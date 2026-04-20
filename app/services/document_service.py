@@ -34,7 +34,14 @@ def serve_document(filename: str, project_id: int, db: Session) -> Response | No
     if not record or not os.path.exists(record.file_path):
         return None
     ext = os.path.splitext(filename)[1].lower()
-    media_types = {".pdf": "application/pdf", ".txt": "text/plain", ".md": "text/plain"}
+    media_types = {
+        ".pdf": "application/pdf",
+        ".txt": "text/plain",
+        ".md": "text/plain",
+        ".csv": "text/csv",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".xls": "application/vnd.ms-excel",
+    }
     media = media_types.get(ext, "application/octet-stream")
     with open(record.file_path, "rb") as f:
         content = f.read()

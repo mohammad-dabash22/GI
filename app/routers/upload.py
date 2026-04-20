@@ -1,5 +1,7 @@
 """Upload routes — thin controller delegating to upload_service."""
 
+import json
+
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -49,17 +51,22 @@ async def pipeline_status(
 
 @router.post("/upload-structured")
 async def upload_structured(
-    payload: dict,
+    file: UploadFile = File(...),
+    payload: str = Form(...),
     user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Ingest structured XLSX/CSV data (parsed client-side).
 
-    Expects JSON body with: project_id, mode, filename, mapping,
-    default_entity_type, rows.
+    Accepts multipart form: 'file' (the original CSV/XLSX) and 'payload'
+    (JSON string with: project_id, mode, filename, mapping,
+    default_entity_type, rows).
     """
+    data = json.loads(payload)
+    file_content = await file.read()
     result = upload_service.process_structured_upload(
-        payload, user.get("username", ""), db
+        data, user.get("username", ""), db,
+        file_content=file_content, original_filename=file.filename,
     )
     status_code = result.pop("status_code", 200)
     return JSONResponse(result, status_code=status_code)

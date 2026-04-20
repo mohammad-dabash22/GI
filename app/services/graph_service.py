@@ -207,6 +207,80 @@ def update_entity(project_id: int, entity_id: str, fields: dict,
     return result
 
 
+def merge_nodes(project_id: int, target_id: str, source_id: str,
+                username: str, db: Session) -> dict:
+    """Merge source_id into target_id, preserving all edges, evidence, and properties."""
+    target_name = ""
+    source_name = ""
+
+    def _merge(gs: GraphState):
+        nonlocal target_name, source_name
+        entity_map = {e["id"]: e for e in gs.entities}
+
+        if target_id not in entity_map or source_id not in entity_map:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="One or both entities not found")
+
+        target = entity_map[target_id]
+        source = entity_map[source_id]
+        target_name, source_name = target["name"], source["name"]
+
+        # Combine properties (target values win on conflict)
+        merged_props = {**source.get("properties", {}), **target.get("properties", {})}
+        target["properties"] = merged_props
+
+        # Combine evidence / all_evidence
+        target_ev = target.get("all_evidence", [target.get("evidence", "")])
+        source_ev = source.get("all_evidence", [source.get("evidence", "")])
+        combined_ev = list(dict.fromkeys(e for e in target_ev + source_ev if e))
+        target["all_evidence"] = combined_ev
+        if not target.get("evidence") and combined_ev:
+            target["evidence"] = combined_ev[0]
+
+        # Combine sources
+        target_src = target.get("sources", [target.get("source", "")])
+        source_src = source.get("sources", [source.get("source", "")])
+        target["sources"] = list(dict.fromkeys(s for s in target_src + source_src if s))
+
+        # Keep higher confidence
+        conf_order = {"high": 3, "medium": 2, "low": 1}
+        if conf_order.get(source.get("confidence"), 0) > conf_order.get(target.get("confidence"), 0):
+            target["confidence"] = source["confidence"]
+
+        # Reassign all relationships from source → target
+        for rel in gs.relationships:
+            if rel["from_id"] == source_id:
+                rel["from_id"] = target_id
+            if rel["to_id"] == source_id:
+                rel["to_id"] = target_id
+
+        # Remove self-loops created by the remap
+        gs.relationships[:] = [
+            r for r in gs.relationships
+            if not (r["from_id"] == target_id and r["to_id"] == target_id)
+        ]
+
+        # Deduplicate relationships by (from_id, to_id, type)
+        seen: set = set()
+        deduped = []
+        for r in gs.relationships:
+            key = (r["from_id"], r["to_id"], r.get("type"))
+            if key not in seen:
+                seen.add(key)
+                deduped.append(r)
+        gs.relationships[:] = deduped
+
+        # Delete the source entity
+        gs.entities[:] = [e for e in gs.entities if e["id"] != source_id]
+
+    result = _with_graph_mutation(project_id, db, _merge)
+    log_action("merge_nodes", user=username, details={
+        "target_id": target_id, "target_name": target_name,
+        "source_id": source_id, "source_name": source_name,
+    })
+    return result
+
+
 def update_edge(project_id: int, edge_index: int | None, edge_id: str,
                 fields: dict, username: str, db: Session) -> dict:
     """Update fields on an existing edge."""

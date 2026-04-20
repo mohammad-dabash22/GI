@@ -31,6 +31,12 @@ class DeleteConnectionRequest(BaseModel):
     edge_id: str
 
 
+class MergeNodesRequest(BaseModel):
+    project_id: int
+    target_id: str
+    source_id: str
+
+
 class UpdateEntityRequest(BaseModel):
     project_id: int
     entity_id: str
