@@ -98,6 +98,8 @@ def build_graph_data(entities: list[dict], relationships: list[dict]) -> dict:
             "properties": props,
             "startDate": props.get("start_date", ""),
             "endDate": props.get("end_date", ""),
+            "displayDashed": rel.get("displayDashed", False),
+            "displayColor": rel.get("displayColor", ""),
         })
 
     return {"nodes": nodes, "links": links}

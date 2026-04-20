@@ -794,14 +794,15 @@ let _activeLayout = null;
 let selectedFiles = [], connectMode = false, connectFromNode = null, currentView = '2d';
 let sidebarOpen = true;
 let currentTheme = localStorage.getItem('fgi_theme') || 'dark';
-let nodeColorMode = localStorage.getItem('fgi_nodeColorMode') || 'uniform';
+const _projKey = (k) => `fgi_p${PROJECT_ID}_${k}`;
+let nodeColorMode = localStorage.getItem(_projKey('nodeColorMode')) || 'uniform';
 const UNIFORM_COLOR = '#888888';
 const _TYPE_DEFAULT_COLORS = {
     Person:'#5B8DEF',Organization:'#F5A623',Account:'#7ED321',Phone:'#BD10E0',
     Address:'#A0785A',Vehicle:'#6B7C8A',Email:'#4FC1E9',MoneyTransfer:'#ED5565',
     Document:'#6C7AE0',Event:'#E84393',Location:'#00B894',SocialMediaAccount:'#1DA1F2'
 };
-let edgeStyleMode = localStorage.getItem('fgi_edgeStyleMode') || 'monochrome';
+let edgeStyleMode = localStorage.getItem(_projKey('edgeStyleMode')) || 'monochrome';
 const EDGE_MONO_COLOR = '#888888';
 let edgeRoutingMode = 'straight';
 let _currentLayoutKey = 'physics';
@@ -884,7 +885,7 @@ function toggleTheme() {
 
 function toggleColorMode() {
     nodeColorMode = nodeColorMode === 'type' ? 'uniform' : 'type';
-    localStorage.setItem('fgi_nodeColorMode', nodeColorMode);
+    localStorage.setItem(_projKey('nodeColorMode'), nodeColorMode);
     const btn = document.getElementById('colorModeBtn');
     btn.textContent = nodeColorMode === 'type' ? '\u25CF By Type' : '\u25CF Uniform';
     if (nodeColorMode === 'uniform') btn.classList.add('active');
@@ -893,8 +894,9 @@ function toggleColorMode() {
 }
 
 function _getNodeDisplayColor(node) {
+    if (node.properties && node.properties.colorOverride) return node.properties.colorOverride;
     if (nodeColorMode === 'uniform') return UNIFORM_COLOR;
-    return (node.properties && node.properties.colorOverride) || node.color;
+    return node.color;
 }
 
 function _refreshNodeColors() {
@@ -930,20 +932,21 @@ function _refreshNodeColors() {
 
 function changeEdgeStyleMode(mode) {
     edgeStyleMode = mode;
-    localStorage.setItem('fgi_edgeStyleMode', mode);
+    localStorage.setItem(_projKey('edgeStyleMode'), mode);
     const sel = document.getElementById('edgeStyleSelect');
     if (sel) sel.value = mode;
     _refreshEdgeStyles();
 }
 
 function _getEdgeDisplayColor(edge) {
-    if (edgeStyleMode === 'monochrome' || edgeStyleMode === 'dashed') {
-        return EDGE_MONO_COLOR;
-    }
+    if (edge.displayColor) return edge.displayColor;
+    if (edgeStyleMode === 'monochrome' || edgeStyleMode === 'dashed') return EDGE_MONO_COLOR;
     return edge.color;
 }
 
 function _getEdgeDashes(edge) {
+    if (edge.displayDashed === true) return true;
+    if (edge.displayDashed === false) return false;
     if (edgeStyleMode === 'dashed') return true;
     if (edgeStyleMode === 'monochrome') return false;
     return edge.dashes;
@@ -2166,11 +2169,18 @@ async function _computeElkLayout(direction) {
     }));
 
     // --- Pass 1: Quick layout to get layer/position assignments ---
+    // Deduplicate edges for pass 1: one edge per (from, to) pair
+    const pass1Seen = new Set();
+    const pass1Edges = [];
+    edgeList.forEach(e => {
+        const key = e.from + '|' + e.to;
+        if (!pass1Seen.has(key)) {
+            pass1Seen.add(key);
+            pass1Edges.push({ id: 'p1_' + key, sources: [e.from], targets: [e.to] });
+        }
+    });
     const pass1Children = allNodes.map(n => ({
         id: n.id, width: nodeSizes[n.id].width, height: nodeSizes[n.id].height
-    }));
-    const pass1Edges = edgeList.map(e => ({
-        id: e.id, sources: [e.from], targets: [e.to]
     }));
     const pass1Graph = { id: 'root', layoutOptions: { ...ROOT_OPTS, 'elk.layered.thoroughness': '7' }, children: pass1Children, edges: pass1Edges };
 
@@ -2188,7 +2198,12 @@ async function _computeElkLayout(direction) {
     (pass1Result.children || []).forEach(n => { posMap[n.id] = { x: n.x + n.width/2, y: n.y + n.height/2 }; });
 
     // --- Pass 2: Full layout with port constraints ---
-    // For each edge, determine port sides based on relative positions
+    // Use pass 1 layer assignments to determine port sides.
+    // In DOWN layout: edges flowing to a lower layer → SOUTH/NORTH,
+    //   same layer → EAST/WEST based on x position.
+    // In RIGHT layout: edges flowing to a later layer → EAST/WEST,
+    //   same layer → SOUTH/NORTH based on y position.
+    const isHorizontalDir = (elkDir === 'RIGHT' || elkDir === 'LEFT');
     const portsByNode = {}; // nodeId -> [{ portId, side }]
     allNodes.forEach(n => { portsByNode[n.id] = []; });
 
@@ -2197,21 +2212,31 @@ async function _computeElkLayout(direction) {
         if (!srcPos || !tgtPos) return;
         const dy = tgtPos.y - srcPos.y, dx = tgtPos.x - srcPos.x;
         let srcSide, tgtSide;
-        
-        // Determine port sides based on the dominant direction
-        // In DOWN layout, most edges flow vertically (dy dominates)
-        // In RIGHT layout, most edges flow horizontally (dx dominates)
-        const isVerticalDominant = Math.abs(dy) > Math.abs(dx) * 0.5;
-        
-        if (isVerticalDominant) {
-            // Primarily vertical flow
-            if (dy > 0) { srcSide = 'SOUTH'; tgtSide = 'NORTH'; }
-            else { srcSide = 'NORTH'; tgtSide = 'SOUTH'; }
+
+        if (isHorizontalDir) {
+            // RIGHT/LEFT layout: primary flow is horizontal
+            const sameLayer = Math.abs(dx) < 5;
+            if (sameLayer) {
+                if (dy > 0) { srcSide = 'SOUTH'; tgtSide = 'NORTH'; }
+                else { srcSide = 'NORTH'; tgtSide = 'SOUTH'; }
+            } else if (dx > 0) {
+                srcSide = 'EAST'; tgtSide = 'WEST';
+            } else {
+                srcSide = 'WEST'; tgtSide = 'EAST';
+            }
         } else {
-            // Primarily horizontal flow or same-layer
-            if (dx > 0) { srcSide = 'EAST'; tgtSide = 'WEST'; }
-            else { srcSide = 'WEST'; tgtSide = 'EAST'; }
+            // DOWN/UP layout: primary flow is vertical
+            const sameLayer = Math.abs(dy) < 5;
+            if (sameLayer) {
+                if (dx > 0) { srcSide = 'EAST'; tgtSide = 'WEST'; }
+                else { srcSide = 'WEST'; tgtSide = 'EAST'; }
+            } else if (dy > 0) {
+                srcSide = 'SOUTH'; tgtSide = 'NORTH';
+            } else {
+                srcSide = 'NORTH'; tgtSide = 'SOUTH';
+            }
         }
+
         const srcPortId = `${e.from}_out_${e.id}`;
         const tgtPortId = `${e.to}_in_${e.id}`;
         if (portsByNode[e.from]) portsByNode[e.from].push({ portId: srcPortId, side: srcSide });
@@ -2220,13 +2245,44 @@ async function _computeElkLayout(direction) {
         e._tgtPort = tgtPortId;
     });
 
+    // Share ports among parallel edges between the same node pair
+    // This prevents port explosion when many edges connect the same two nodes
+    const sharedPorts = {}; // "nodeId|side|peerNodeId" -> portId
+    const finalPortsByNode = {};
+    allNodes.forEach(n => { finalPortsByNode[n.id] = []; });
+    const portRemap = {};
+
+    edgeList.forEach(e => {
+        const srcPort = portsByNode[e.from]?.find(p => p.portId === e._srcPort);
+        const tgtPort = portsByNode[e.to]?.find(p => p.portId === e._tgtPort);
+        if (srcPort) {
+            const key = `${e.from}|${srcPort.side}|${e.to}`;
+            if (!sharedPorts[key]) {
+                sharedPorts[key] = srcPort.portId;
+                finalPortsByNode[e.from].push(srcPort);
+            }
+            portRemap[srcPort.portId] = sharedPorts[key];
+        }
+        if (tgtPort) {
+            const key = `${e.to}|${tgtPort.side}|${e.from}`;
+            if (!sharedPorts[key]) {
+                sharedPorts[key] = tgtPort.portId;
+                finalPortsByNode[e.to].push(tgtPort);
+            }
+            portRemap[tgtPort.portId] = sharedPorts[key];
+        }
+    });
+
     const children = allNodes.map(n => {
-        const ports = portsByNode[n.id] || [];
-        const northCount = ports.filter(p => p.side === 'NORTH').length;
-        const southCount = ports.filter(p => p.side === 'SOUTH').length;
-        const maxSidePorts = Math.max(northCount, southCount);
+        const ports = finalPortsByNode[n.id] || [];
+        const maxSidePorts = Math.max(
+            ports.filter(p => p.side === 'NORTH').length,
+            ports.filter(p => p.side === 'SOUTH').length,
+            ports.filter(p => p.side === 'EAST').length,
+            ports.filter(p => p.side === 'WEST').length,
+        );
         const baseW = nodeSizes[n.id].width;
-        const w = Math.max(baseW, maxSidePorts * 20);
+        const w = Math.max(baseW, Math.min(maxSidePorts * 25, baseW * 2.5));
         return {
         id: n.id,
         width: w,
@@ -2244,8 +2300,8 @@ async function _computeElkLayout(direction) {
 
     const edges = edgeList.map(e => ({
         id: e.id,
-        sources: [e._srcPort || e.from],
-        targets: [e._tgtPort || e.to],
+        sources: [portRemap[e._srcPort] || e._srcPort || e.from],
+        targets: [portRemap[e._tgtPort] || e._tgtPort || e.to],
         layoutOptions: {
             'elk.layered.priority.straightness': ['transferred_money_to','paid_by','received_from','financed','owns_account','account_at','wired_to','deposit','withdrawal'].includes(e.type) ? '15' : '1'
         }
@@ -2272,6 +2328,10 @@ async function _computeElkLayout(direction) {
         });
 
         // Create waypoints from ELK edge bend points
+        // For parallel edges sharing the same port, only create waypoints
+        // for the first representative; others reuse the same waypoint chain
+        const wpCreatedForPair = {}; // "from|to" -> { chainIds, baseStyle, origData, elkEdgeId }
+
         (result.edges || []).forEach(elkEdge => {
             if (!elkEdge.sections || !elkEdge.sections.length) return;
             const section = elkEdge.sections[0];
@@ -2281,7 +2341,37 @@ async function _computeElkLayout(direction) {
             const visEdge = edgesDS.get(elkEdge.id);
             if (!visEdge) return;
             const origData = visEdge.data || {};
+            const pairKey = [visEdge.from, visEdge.to].sort().join('|');
 
+            if (wpCreatedForPair[pairKey]) {
+                // Parallel edge — reuse existing waypoint chain from the representative
+                const rep = wpCreatedForPair[pairKey];
+                edgesDS.remove(elkEdge.id);
+                for (let ci = 0; ci < rep.chainIds.length - 1; ci++) {
+                    const segId = `${elkEdge.id}_seg${ci}`;
+                    const isFirst = ci === 0;
+                    const isLast = ci === rep.chainIds.length - 2;
+                    edgesDS.add({
+                        id: segId, from: rep.chainIds[ci], to: rep.chainIds[ci+1],
+                        label: isFirst ? (visEdge.label || '') : '',
+                        ...rep.baseStyle,
+                        color: visEdge.color, width: visEdge.width || 1, dashes: visEdge.dashes || false,
+                        arrows: { to: { enabled: isLast, scaleFactor: 0.8 } },
+                        data: origData,
+                    });
+                }
+                bends.forEach((bp, bi) => {
+                    _waypoints.push({
+                        id: `wp_elk_${rep.elkEdgeId}_${bi}`, origEdgeId: elkEdge.id,
+                        e1Id: `${elkEdge.id}_seg${bi}`, e2Id: `${elkEdge.id}_seg${bi+1}`,
+                        fromId: visEdge.from, toId: visEdge.to,
+                        origEdge: visEdge
+                    });
+                });
+                return;
+            }
+
+            // First edge for this pair — create waypoint nodes
             bends.forEach((bp, bi) => {
                 const wpId = `wp_elk_${elkEdge.id}_${bi}`;
                 const bx = _gridSnap(bp.x), by = _gridSnap(bp.y);
@@ -2294,12 +2384,13 @@ async function _computeElkLayout(direction) {
                 });
             });
 
-            // Build chain: source -> wp0 -> wp1 -> ... -> target
             const chainIds = [visEdge.from, ...bends.map((_, bi) => `wp_elk_${elkEdge.id}_${bi}`), visEdge.to];
             const baseStyle = {
                 color: visEdge.color, width: visEdge.width || 1, dashes: visEdge.dashes || false,
                 font: {size:0}, smooth: {type:'continuous', roundness:0},
             };
+
+            wpCreatedForPair[pairKey] = { chainIds, baseStyle, origData, elkEdgeId: elkEdge.id };
 
             edgesDS.remove(elkEdge.id);
 
@@ -2316,7 +2407,6 @@ async function _computeElkLayout(direction) {
                 });
             }
 
-            // Track as waypoints for particle animation and persistence
             bends.forEach((bp, bi) => {
                 const wpId = `wp_elk_${elkEdge.id}_${bi}`;
                 _waypoints.push({
@@ -3089,14 +3179,54 @@ async function saveNodeAll(entityId) {
     } catch(e) { if (btn) { btn.textContent = '✗ Failed'; btn.style.background = '#5a2a2a'; btn.style.color = '#d77'; setTimeout(() => { btn.textContent = 'Save'; btn.style.background = ''; btn.style.color = ''; btn.disabled = false; }, 2000); } }
 }
 
+function _pickEdgeColor(edgeId, colorValue) {
+    const link = allLinks.find(l => l.id === edgeId);
+    if (!link) return;
+    if (!colorValue) {
+        delete link.displayColor;
+    } else {
+        link.displayColor = colorValue;
+    }
+    _liveUpdateEdgeStyle(link);
+    const pickerEl = document.getElementById('edgeEditColor');
+    if (pickerEl && colorValue) pickerEl.value = colorValue;
+    document.querySelectorAll('[onclick^="_pickEdgeColor"]').forEach(el => {
+        if (el.tagName === 'DIV') el.style.borderColor = (el.style.background === colorValue) ? '#fff' : 'var(--t-border)';
+    });
+}
+
+function _toggleEdgeDashed(edgeId, dashed) {
+    const link = allLinks.find(l => l.id === edgeId);
+    if (!link) return;
+    link.displayDashed = dashed || false;
+    _liveUpdateEdgeStyle(link);
+}
+
+function _liveUpdateEdgeStyle(link) {
+    const dc = _getEdgeDisplayColor(link);
+    const dd = _getEdgeDashes(link);
+    const style = { color: { color: dc, highlight: dc }, dashes: dd };
+    if (edgesDS) {
+        try { edgesDS.update({ id: link.id, ...style }); } catch(e){}
+        const allIds = edgesDS.getIds();
+        const prefix = link.id + '_seg';
+        allIds.forEach(sid => { if (sid.startsWith(prefix)) edgesDS.update({ id: sid, ...style }); });
+    }
+    if (network) network.redraw();
+}
+
 async function saveEdgeAll(edgeIndex) {
     const fields = {};
     const labelEl = document.getElementById('edgeEditLabel');
     const typeEl = document.getElementById('edgeEditType');
     const evidEl = document.getElementById('edgeEditEvidence');
+    const dispDashedEl = document.getElementById('edgeEditDashed');
+    const dispColorEl = document.getElementById('edgeEditColor');
     if (labelEl) fields.label = labelEl.value.trim();
     if (typeEl) fields.type = typeEl.value;
     if (evidEl) fields.evidence = evidEl.value.trim();
+    if (dispDashedEl) fields.displayDashed = dispDashedEl.checked;
+    if (dispColorEl) fields.displayColor = dispColorEl.value;
     const btn = document.getElementById('edgeSaveBtn');
     if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
     try {
@@ -3104,6 +3234,7 @@ async function saveEdgeAll(edgeIndex) {
             body: JSON.stringify({edge_index: edgeIndex, project_id: PROJECT_ID, fields})})).json();
         if (d.success) {
             allNodes = d.graph.nodes; allLinks = d.graph.links;
+            _refreshEdgeStyles();
             if (btn) { btn.textContent = '✓ Saved'; btn.style.background = '#2a5a2a'; btn.style.color = '#7d7'; }
             setTimeout(() => { if (btn) { btn.textContent = 'Save'; btn.style.background = ''; btn.style.color = ''; btn.disabled = false; } }, 2000);
         }
@@ -3149,6 +3280,20 @@ function showLinkDetail(link){
         <div class="detail-field"><div class="field-label">Source</div><div class="field-value"><span class="source-link" style="cursor:pointer;text-decoration:underline" onclick="viewSourceDocument('${(link.evidenceSource||'').replace(/'/g,"\\'")}')">${_stripSourceHash(link.evidenceSource||'')}</span></div></div>
         <div class="detail-field"><div class="field-label">Evidence</div>
             <textarea id="edgeEditEvidence" style="width:100%;min-height:60px;background:var(--t-input);border:1px solid var(--t-border);border-radius:3px;color:var(--t-muted);font-size:11px;font-family:inherit;padding:6px;resize:vertical;margin-top:3px;box-sizing:border-box">${(link.evidence||'').replace(/</g,'&lt;')}</textarea>
+        </div>
+        <div style="border-top:1px solid var(--t-border);margin:8px 0"></div>
+        <div class="detail-field"><div class="field-label">Edge Style</div>
+            <label style="display:flex;align-items:center;gap:6px;margin-top:4px;cursor:pointer;font-size:11px;color:var(--t-text)">
+                <input type="checkbox" id="edgeEditDashed" ${link.displayDashed ? 'checked' : ''} onchange="_toggleEdgeDashed('${link.id}', this.checked)" style="cursor:pointer">
+                Dashed
+            </label>
+        </div>
+        <div class="detail-field"><div class="field-label">Edge Color</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
+                ${['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#1ABC9C','#888888'].map(c => `<div style="width:20px;height:20px;border-radius:4px;background:${c};cursor:pointer;border:2px solid ${(link.displayColor===c)?'#fff':'var(--t-border)'}" onclick="_pickEdgeColor('${link.id}', '${c}')"></div>`).join('')}
+                <input type="color" id="edgeEditColor" value="${link.displayColor || link.color || '#888888'}" style="width:28px;height:24px;border:1px solid var(--t-border);border-radius:3px;cursor:pointer;background:var(--t-input)" onchange="_pickEdgeColor('${link.id}', this.value)" title="Pick custom color">
+                <button onclick="_pickEdgeColor('${link.id}', null)" style="background:none;border:1px solid var(--t-border);border-radius:3px;font-size:9px;padding:2px 6px;color:var(--t-muted);cursor:pointer" title="Reset to default">Reset</button>
+            </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
             <button class="action-btn" id="edgeSaveBtn" onclick="saveEdgeAll(${edgeIdx})" style="min-width:80px;transition:background 0.3s,color 0.3s;border-color:#3a5;color:#7d7">Save</button>
@@ -6803,9 +6948,15 @@ document.addEventListener('keyup', e => {
 
 // ═══ Load saved project graph on page open ═══
 (async function _initProject() {
-    // Initialize UI from localStorage
+    // Initialize UI from per-project preferences
     const sel = document.getElementById('edgeStyleSelect');
     if (sel) sel.value = edgeStyleMode;
+    const cmBtn = document.getElementById('colorModeBtn');
+    if (cmBtn) {
+        cmBtn.textContent = nodeColorMode === 'type' ? '\u25CF By Type' : '\u25CF Uniform';
+        if (nodeColorMode === 'uniform') cmBtn.classList.add('active');
+        else cmBtn.classList.remove('active');
+    }
     
     try {
         const res = await fetch(_urlPid('/api/projects/' + PROJECT_ID));

@@ -301,6 +301,10 @@ def update_edge(project_id: int, edge_index: int | None, edge_id: str,
                 target["type"] = fields["type"]
             if "evidence" in fields:
                 target["evidence"] = fields["evidence"]
+            if "displayDashed" in fields:
+                target["displayDashed"] = fields["displayDashed"]
+            if "displayColor" in fields:
+                target["displayColor"] = fields["displayColor"]
 
     result = _with_graph_mutation(project_id, db, _update, include_rejected=True)
     log_action("edit_connection", user=username,
