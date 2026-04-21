@@ -102,7 +102,8 @@ async def process_upload(
         ps["pass_detail"] = f"{pass_name}: {current}/{total}"
 
     try:
-        result = extract_full_pipeline(files_data, progress_cb=_progress_cb)
+        # Pass the existing graph entities to provide historical context for Pass 2 cross-referencing
+        result = extract_full_pipeline(files_data, existing_entities=list(gs.entities), progress_cb=_progress_cb)
         new_entities = result["entities"]
         new_relationships = result["relationships"]
         all_errors.extend(result.get("errors", []))

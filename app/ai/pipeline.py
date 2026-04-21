@@ -13,6 +13,7 @@ from app.ai.client import call_llm, parse_json
 
 def extract_full_pipeline(
     files_data: list[dict],
+    existing_entities: list[dict] | None = None,
     progress_cb=None
 ) -> dict:
     """Run the complete 3-pass pipeline.
@@ -42,7 +43,8 @@ def extract_full_pipeline(
     file_texts = {fd["filename"]: fd["full_text"] for fd in files_data}
     p2 = pass2_cross_reference(
         all_entities, all_relationships, file_texts,
-        progress_cb
+        existing_entities=existing_entities,
+        progress_cb=progress_cb
     )
     all_entities = p2["entities"]
     all_relationships = p2["relationships"]

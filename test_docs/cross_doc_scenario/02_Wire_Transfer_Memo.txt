@@ -1,0 +1,8 @@
+INTERNAL WIRE TRANSFER COMPLIANCE MEMO
+Date: March 12, 2024
+Subject: Large Outbound Payment Review
+
+A highly irregular outbound wire transfer of $8.5 million has been flagged by the compliance system at First Horizon Bank. 
+The funds originated from the corporate treasury account of First Horizon Bank and were deposited directly into the merchant account of Project Olympus LLC.
+
+The authorization signature on the wire transfer form matches the handwriting of our internal VP of Finance, Evelyn Thorne. We are placing Evelyn Thorne on administrative leave pending an investigation.

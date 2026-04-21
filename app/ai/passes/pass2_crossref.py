@@ -21,6 +21,7 @@ def _build_entity_summary(entities: list[dict]) -> str:
 
 def pass2_cross_reference(entities: list[dict], relationships: list[dict],
                           file_texts: dict[str, str],
+                          existing_entities: list[dict] | None = None,
                           progress_cb=None) -> dict:
     """Pass 2: Two-step cross-reference — (a) dedup entities, (b) find cross-doc relationships."""
     errors = []
@@ -56,7 +57,10 @@ def pass2_cross_reference(entities: list[dict], relationships: list[dict],
     kept_entities = [e for e in entities if e.get("id") not in merged_ids]
 
     # ── 2b: Cross-document relationships ──
-    entity_summary = _build_entity_summary(kept_entities)
+    context_entities = kept_entities.copy()
+    if existing_entities:
+        context_entities.extend(existing_entities)
+    entity_summary = _build_entity_summary(context_entities)
     new_entities, new_relationships = [], []
     filenames = list(file_texts.keys())
     for i, fname in enumerate(filenames):
