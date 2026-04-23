@@ -12,3 +12,5 @@ brd_v02_extracted.txt
 scratch/
 scripts/
 docs/
+Dockerfile
+test_e2e.py
