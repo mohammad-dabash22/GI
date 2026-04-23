@@ -61,7 +61,6 @@ CRITICAL RULES:
    - Specific bank accounts (use account holder + bank as name)
    - Named locations/addresses (cities, countries, specific addresses)
    - Named vessels, vehicles, phone numbers, emails
-   - Named documents (invoices, contracts with specific reference numbers)
    - Named events/operations (e.g. "Operation Labyrinth")
 
 4. RELATIONSHIPS carry the detail. Put amounts, dates, references, and descriptions into relationship labels and properties, NOT as separate entities.

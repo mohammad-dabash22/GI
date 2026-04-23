@@ -12,7 +12,7 @@ from app.core.extractors import extract_text
 from app.core.deduplication import deduplicate_entities, remap_relationships
 from app.core.graph_builder import build_graph_data
 from app.core.graph_state import load_graph, save_graph, push_undo, require_project, get_pipeline_status
-from app.ai.pipeline import extract_full_pipeline
+from app.ai.pipeline import extract_full_pipeline, run_cross_document_discovery
 from app.services.audit_service import log_action
 
 
@@ -102,37 +102,53 @@ async def process_upload(
         ps["pass_detail"] = f"{pass_name}: {current}/{total}"
 
     try:
-        # Pass the existing graph entities to provide historical context for Pass 2 cross-referencing
-        result = extract_full_pipeline(files_data, existing_entities=list(gs.entities), progress_cb=_progress_cb)
+        # Phases 1-3: extract, batch dedup, validate, post-process (no global graph yet for Pass 4)
+        result = extract_full_pipeline(files_data, progress_cb=_progress_cb)
         new_entities = result["entities"]
         new_relationships = result["relationships"]
         all_errors.extend(result.get("errors", []))
 
+        # Phase 2: merge with project graph, deterministic string-similarity dedup
         combined_entities = list(gs.entities) + new_entities
         combined_rels = list(gs.relationships) + new_relationships
         deduped_entities, id_mapping = deduplicate_entities(combined_entities)
         remapped_rels = remap_relationships(combined_rels, id_mapping)
 
-        save_graph(project_id, deduped_entities, remapped_rels, all_errors, db)
-        graph_data = build_graph_data(deduped_entities, remapped_rels)
+        # Phase 3: Pass 4 — cross-doc discovery on canonical graph, then validate + post-process
+        file_texts = {fd["filename"]: fd["full_text"] for fd in files_data}
+        discovery = run_cross_document_discovery(
+            deduped_entities,
+            remapped_rels,
+            file_texts,
+            progress_cb=_progress_cb,
+        )
+        all_errors.extend(discovery.get("errors", []))
+
+        # Final dedup after Pass 4 additions
+        final_entities, final_id_mapping = deduplicate_entities(discovery["entities"])
+        final_rels = remap_relationships(discovery["relationships"], final_id_mapping)
+
+        save_graph(project_id, final_entities, final_rels, all_errors, db)
+        graph_data = build_graph_data(final_entities, final_rels)
 
         log_action("upload_documents", user=username, details={
             "project_id": project_id,
             "files": [fd["filename"] for fd in files_data],
-            "entities_extracted": len(deduped_entities),
-            "relationships_extracted": len(remapped_rels),
+            "entities_extracted": len(final_entities),
+            "relationships_extracted": len(final_rels),
             "mode": mode,
         })
 
         return {
             "success": True,
             "files_processed": [fd["filename"] for fd in files_data],
-            "entity_count": len(deduped_entities),
-            "relationship_count": len(remapped_rels),
+            "entity_count": len(final_entities),
+            "relationship_count": len(final_rels),
             "errors": all_errors,
             "graph": graph_data,
             "pipeline": {
-                "passes_completed": result.get("pass", 0),
+                "passes_completed": 4,
+                "phases_1_3": result.get("pass", 0),
                 "merges_applied": result.get("pass2_result", {}).get("merges_applied", 0),
             },
         }

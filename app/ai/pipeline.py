@@ -1,11 +1,12 @@
-"""Full 3-pass extraction pipeline orchestrator.
+"""Extraction pipeline: Pass 1 (extract) -> Pass 2 (dedup) -> Pass 3 (validate) -> post-process.
 
-Coordinates: Pass 1 (extract) → Pass 2 (cross-reference) → Pass 3 (validate) → post-process.
+Cross-document discovery (Pass 4) runs after merge with the global graph; see run_cross_document_discovery.
 """
 
 from app.ai.passes.pass1_extract import pass1_quick_extract, _build_source_tag
-from app.ai.passes.pass2_crossref import pass2_cross_reference
+from app.ai.passes.pass2_crossref import pass2_dedup
 from app.ai.passes.pass3_validate import pass3_validate
+from app.ai.passes.pass4_discovery import pass4_discover_connections
 from app.ai.postprocess import post_process
 from app.ai.prompts.extraction import BASE_SYSTEM
 from app.ai.client import call_llm, parse_json
@@ -13,10 +14,10 @@ from app.ai.client import call_llm, parse_json
 
 def extract_full_pipeline(
     files_data: list[dict],
-    existing_entities: list[dict] | None = None,
-    progress_cb=None
+    progress_cb=None,
 ) -> dict:
-    """Run the complete 3-pass pipeline.
+    """Run Pass 1-3 plus post-process on the upload batch (no global merge, no Pass 4).
+
     files_data: list of {"filename": str, "chunks": list, "doc_type": str, "full_text": str}
     progress_cb: fn(pass_name, current, total) for progress updates
     """
@@ -39,11 +40,9 @@ def extract_full_pipeline(
         "pass": 1
     }
 
-    # ── Pass 2 ──
-    file_texts = {fd["filename"]: fd["full_text"] for fd in files_data}
-    p2 = pass2_cross_reference(
-        all_entities, all_relationships, file_texts,
-        existing_entities=existing_entities,
+    # ── Pass 2 (batch dedup only) ──
+    p2 = pass2_dedup(
+        all_entities, all_relationships,
         progress_cb=progress_cb
     )
     all_entities = p2["entities"]
@@ -77,6 +76,53 @@ def extract_full_pipeline(
         "pass": 3,
         "pass1_result": pass1_result,
         "pass2_result": pass2_result,
+    }
+
+
+def run_cross_document_discovery(
+    canonical_entities: list[dict],
+    canonical_relationships: list[dict],
+    file_texts: dict[str, str],
+    progress_cb=None,
+) -> dict:
+    """Pass 4: post-merge cross-document discovery, validate new artifacts, post-process, return graph.
+
+    Does not perform deduplicate_entities; caller should run global dedup before save.
+    """
+    p4 = pass4_discover_connections(
+        canonical_entities, canonical_relationships, file_texts,
+        progress_cb=progress_cb
+    )
+    new_entities = p4.get("new_entities", [])
+    new_rels = p4.get("new_relationships", [])
+    all_errors: list = list(p4.get("errors", []))
+
+    if new_entities or new_rels:
+        p3 = pass3_validate(
+            new_entities, new_rels,
+            progress_cb=None,
+        )
+        new_entities = p3["entities"]
+        new_rels = p3["relationships"]
+        all_errors.extend(p3.get("errors", []))
+
+    combined_entities = list(canonical_entities) + new_entities
+    combined_rels = list(canonical_relationships) + new_rels
+    combined_entities, combined_rels = post_process(combined_entities, combined_rels)
+
+    # Deduplicate edges by (from_id, to_id, type) after merge
+    rel_seen = set()
+    deduped_rels: list[dict] = []
+    for r in combined_rels:
+        key = (r.get("from_id"), r.get("to_id"), r.get("type"))
+        if key not in rel_seen:
+            rel_seen.add(key)
+            deduped_rels.append(r)
+
+    return {
+        "entities": combined_entities,
+        "relationships": deduped_rels,
+        "errors": all_errors,
     }
 
 
